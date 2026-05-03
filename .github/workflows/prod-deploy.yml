@@ -1,0 +1,62 @@
+name: Deploy Production Web
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Expo Web
+        # INJECT ENV HERE: This bakes the API URL into your JS files
+        env:
+          EXPO_PUBLIC_API_URL: https://api.eims.live/api
+        run: npx expo export --platform web
+
+      - name: Pre-Deploy Clean (Wipe Source Folders)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Remove everything including old source folders like (app), (auth)
+            # and the Hestia placeholder index.php
+            rm -rf /home/produser/web/pay.edumateims.com/public_html/*
+
+      - name: Deploy to Production Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          target: "/home/produser/web/pay.edumateims.com/public_html/"
+          strip_components: 1
+          overwrite: true
+
+      - name: Finalize Permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Set ownership to the Hestia user
+            chown -R produser:produser /home/produser/web/pay.edumateims.com/public_html
+            chmod -R 755 /home/produser/web/pay.edumateims.com/public_html
