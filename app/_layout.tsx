@@ -15,13 +15,15 @@ import { useEffect } from "react";
 import { Alert, AppState, Platform } from "react-native";
 import { useColorScheme } from "nativewind";
 import { useAppSelector } from "@/redux/hook";
+import RichToast from "@/components/shared/CustomToast/RichToast";
+import { setRichToastRef } from "@/components/shared/CustomToast/message";
 
 export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "web") {
       document.title = "Payment Portal";
     }
-  }, [])
+  }, []);
   useEffect(() => {
     const initializeUpdates = async () => {
       try {
@@ -101,6 +103,7 @@ export default function RootLayout() {
             >
               <Stack screenOptions={{ headerShown: false }} />
               <Toast config={toastConfig} />
+              <RichToast ref={(ref) => setRichToastRef(ref)} />
             </SafeAreaView>
           </ThemeWatcher>
         </PersistGate>

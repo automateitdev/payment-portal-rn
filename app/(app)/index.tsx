@@ -29,7 +29,7 @@ export default function DashboardScreen() {
     useGetInstituteInfoQuery({}, { refetchOnMountOrArgChange: true });
 
   const user = data?.payload?.data?.user || {};
-
+console.log(user)
   if (isLoading || isFetching) {
     return (
       <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center">
@@ -215,6 +215,12 @@ export default function DashboardScreen() {
                 <Row label="Full Name" value={user?.student_name} />
                 <Row label="Student ID" value={user?.student_id} />
                 <Row label="Category" value={user?.category} isLast />
+                <Row
+                  label="Resident Type"
+                  value={user?.residential_type}
+                  isLast
+                />
+                <Row label="Student Type" value={user?.student_type} isLast />
               </Section>
             </View>
 
