@@ -27,6 +27,7 @@ import {
   View,
 } from "react-native";
 import Collapsible from "react-native-collapsible";
+import { showMessage } from "@/components/shared/CustomToast/message";
 
 interface FeeSubhead {
   payapplies_id: number;
@@ -65,10 +66,10 @@ interface PaymentData {
   errors: any;
   status: "success";
   charge_setup: ChargeSetup;
-  all_charges: Array<{
+  all_charges: {
     id: number;
     amount: string;
-  }>;
+  }[];
   all_payments: {
     processed_payments: FeeHead[];
     base_total: number;
@@ -159,7 +160,7 @@ const AvailablePayment = () => {
       setAutoSelectedSubheads(newAutoSelected);
       setSelectedFeesubheads(newSelected);
     }
-  }, [feeHeads]);
+  }, [feeHeads, student_online_payment_setting]);
 
   useEffect(() => {
     if (gatewayList && gatewayList.length === 1) {
@@ -366,13 +367,8 @@ const AvailablePayment = () => {
           });
         }
       }
-
-      console.log("Sending payment request:", paymentRequestData);
-
       // Call the payment API
       const response = await paymentRequest(paymentRequestData).unwrap();
-
-      console.log("Payment API response:", response);
 
       if (response.status === "success") {
         if (response.html) {
@@ -380,7 +376,7 @@ const AvailablePayment = () => {
             // On web, we might want to handle HTML form differently if it's a POST
             // But usually, redirecting to a payment URL is preferred.
             // If the API returns HTML, it usually expects a self-submitting form.
-            // For now, let's assume we can use the payment_url if it exists, 
+            // For now, let's assume we can use the payment_url if it exists,
             // or we might need to render the HTML.
             if (response.payment_url) {
               window.location.href = response.payment_url;
@@ -400,8 +396,6 @@ const AvailablePayment = () => {
         }
         // Case 2: Direct URL (SSLCommerz, bKash, etc.)
         else if (response.payment_url) {
-          console.log("Direct URL response:", response.payment_url);
-
           if (Platform.OS === "web") {
             window.location.href = response.payment_url;
             return;
@@ -418,8 +412,6 @@ const AvailablePayment = () => {
         }
         // Case 3: Direct success
         else {
-          console.log("Direct success response");
-
           router.push({
             pathname: "/payments/available_payment/success",
             params: {
@@ -433,8 +425,6 @@ const AvailablePayment = () => {
         }
       } else {
         // Payment failed
-        console.log("Payment failed:", response.error);
-
         router.push({
           pathname: "/payments/available_payment/fail",
           params: {
@@ -448,25 +438,43 @@ const AvailablePayment = () => {
 
       setConfirmPaymentDialog(false);
     } catch (error: any) {
+      setConfirmPaymentDialog(false);
+      console.log("Payment Error Context:", error);
+
       let errorMessage = "Failed to process payment. Please try again.";
 
-      // 1. RTK Query standard error shape
-      if (
-        error?.data?.errors?.system_error &&
-        Array.isArray(error.data.errors.system_error)
-      ) {
-        // Extract all messages from the array of error objects
-        const messages = error.data.errors.system_error
-          .map((errObj: any) => errObj?.message || errObj?.msg || "")
-          .filter(Boolean);
+      // 1. Handle nested errors object (e.g., system_error, exam_error, etc.)
+      if (error?.data?.errors) {
+        const errors = error.data.errors;
+        const messages: string[] = [];
+
+        Object.keys(errors).forEach((key) => {
+          const errorArray = errors[key];
+          if (Array.isArray(errorArray)) {
+            errorArray.forEach((err: any) => {
+              if (err?.message) messages.push(err.message);
+              else if (typeof err === "string") messages.push(err);
+            });
+          } else if (typeof errorArray === "string") {
+            messages.push(errorArray);
+          }
+        });
 
         if (messages.length > 0) {
-          errorMessage = messages.join("\n• ");
-          // Optional: prefix if you want
-          // errorMessage = "The following issues occurred:\n• " + messages.join("\n• ");
+          errorMessage = messages.join("\n");
         }
       }
-      // 2. Fallback to other common places
+      // 2. Handle direct system_error if not nested in errors
+      else if (error?.data?.system_error) {
+        if (Array.isArray(error.data.system_error)) {
+          errorMessage = error.data.system_error
+            .map((e: any) => e.message || e)
+            .join("\n");
+        } else {
+          errorMessage = error.data.system_error;
+        }
+      }
+      // 3. Fallback to other common fields
       else if (error?.data?.message) {
         errorMessage = error.data.message;
       } else if (error?.data?.error) {
@@ -475,23 +483,7 @@ const AvailablePayment = () => {
         errorMessage = error.message;
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // Show nice alert
-      // ──────────────────────────────────────────────────────────────
-      Alert.alert(
-        "Payment Error",
-        errorMessage,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setConfirmPaymentDialog(false);
-              // Optional: reset selection or refresh data here if needed
-            },
-          },
-        ],
-        { cancelable: true },
-      );
+      showMessage("error", "Payment Error", errorMessage);
     }
   };
   const totalChargeAmount = useMemo(() => {

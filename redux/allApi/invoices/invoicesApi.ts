@@ -235,9 +235,18 @@ export const paymentApi = baseApi.injectEndpoints({
       providesTags: ["Payable"],
     }),
 
+    // fetchGatewayList: builder.query({
+    //   query: () => ({
+    //     url: "/gateway-list",
+    //   }),
+    //   keepUnusedDataFor: 0,
+    //   transformResponse: (response: any) => {
+    //     return response.payload?.data?.gatewayList || [];
+    //   },
+    // }),
     fetchGatewayList: builder.query({
       query: () => ({
-        url: "/gateway-list",
+        url: "/payment-portal/gateway-list-by-institute",
       }),
       keepUnusedDataFor: 0,
       transformResponse: (response: any) => {

@@ -1,9 +1,9 @@
+import { showMessage } from "@/components/shared/CustomToast/message";
 import { getErrorMessage } from "@/components/utils/errorHandler";
 import { useLoginUserMutation } from "@/redux/allApi/authApi/authApi";
 import { baseApi } from "@/redux/baseApi/baseApi";
 import { setUser } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
-import { showToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -73,9 +73,9 @@ const LoginScreen = () => {
         }),
       );
       dispatch(baseApi.util.resetApiState());
-      showToast("success", "Login Successful", "Welcome back!");
+      showMessage("success", "Login Successful", "Hi,Welcome back!");
     } catch (err) {
-      showToast(
+      showMessage(
         "error",
         "Login Failed",
         getErrorMessage(err) || "Invalid credentials",
@@ -143,7 +143,9 @@ const LoginScreen = () => {
             <Ionicons
               name="person-outline"
               size={20}
-              color={focusedInput === "custom_student_id" ? "#16A34A" : "#9CA3AF"}
+              color={
+                focusedInput === "custom_student_id" ? "#16A34A" : "#9CA3AF"
+              }
               style={styles.inputIcon}
             />
             <TextInput
@@ -504,4 +506,3 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
-
