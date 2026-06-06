@@ -22,7 +22,7 @@ const menuItems = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
@@ -54,7 +54,10 @@ export default function Sidebar() {
           return (
             <TouchableOpacity
               key={item.label}
-              onPress={() => router.push(item.to as any)}
+              onPress={() => {
+                router.push(item.to as any);
+                onNavigate?.();
+              }}
               activeOpacity={0.7}
               className={`flex-row items-center p-4 rounded-2xl mb-1 ${
                 isActive
