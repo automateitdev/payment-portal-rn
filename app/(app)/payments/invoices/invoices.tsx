@@ -216,11 +216,45 @@ const getAmountInWords = (amount: number) => {
   return `${numberToWords(whole)} Taka and ${numberToWords(fraction)} Paisa Only`;
 };
 
+// Horizontal-scroll container for the table.
+// On web, RN's ScrollView doesn't react to the mouse wheel, so we use a native
+// scrollable <div> and translate vertical wheel into horizontal scroll.
+const HScrollTable = ({
+  minWidth,
+  children,
+}: {
+  minWidth: number;
+  children: React.ReactNode;
+}) => {
+  if (Platform.OS === "web") {
+    return (
+      <div
+        style={{ overflowX: "auto", overflowY: "hidden", width: "100%" }}
+        onWheel={(e) => {
+          if (e.deltaY !== 0) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+      >
+        <div style={{ minWidth }}>{children as React.ReactNode}</div>
+      </div>
+    );
+  }
+  return (
+    <HorizontalScrollView horizontal showsHorizontalScrollIndicator>
+      <View style={{ minWidth }}>{children}</View>
+    </HorizontalScrollView>
+  );
+};
+
 const Invoices = () => {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 375;
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
+  // Full-width flex table only fits when the viewport is wide enough.
+  // Narrow web windows & all mobile devices use the horizontal-scroll table.
+  const useFlexLayout = isWeb && width >= 768;
 
   const user = useAppSelector((state: RootState) => state.auth.user);
   const themeMode = useAppSelector((state: RootState) => state.theme.mode);
@@ -827,14 +861,14 @@ const Invoices = () => {
     flex: number,
     extraStyle: Record<string, unknown> = {},
   ) => ({
-    ...(isWeb ? { flex, minWidth: 0 } : { width: mobileWidth }),
+    ...(useFlexLayout ? { flex, minWidth: 0 } : { width: mobileWidth }),
     ...extraStyle,
   });
 
   const TableHeader = () => (
     <View
       className="flex-row bg-slate-50 dark:bg-slate-800/80 py-3 border border-slate-200 dark:border-slate-700"
-      style={isWeb ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
+      style={useFlexLayout ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
     >
       <View
         style={columnStyle(150, 2.6, {
@@ -915,7 +949,7 @@ const Invoices = () => {
     return (
       <View
         className={`flex-row py-4 border-b border-l border-r border-slate-100 dark:border-slate-800 ${isSmallScreen ? "py-3" : ""}`}
-        style={isWeb ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
+        style={useFlexLayout ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
       >
         <View
           style={columnStyle(150, 2.6, {
@@ -1150,7 +1184,7 @@ const Invoices = () => {
           <View
             className={`mx-4 mt-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden ${isSmallScreen ? "mx-3" : ""}`}
           >
-            {isWeb ? (
+            {useFlexLayout ? (
               <View style={{ width: "100%" }}>
                 <TableHeader />
                 <FlatList
@@ -1161,17 +1195,15 @@ const Invoices = () => {
                 />
               </View>
             ) : (
-              <HorizontalScrollView horizontal showsHorizontalScrollIndicator>
-                <View>
-                  <TableHeader />
-                  <FlatList
-                    data={invoices}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => <InvoiceRow item={item} />}
-                    scrollEnabled={false}
-                  />
-                </View>
-              </HorizontalScrollView>
+              <HScrollTable minWidth={hasAnyPaid ? 650 : 550}>
+                <TableHeader />
+                <FlatList
+                  data={invoices}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => <InvoiceRow item={item} />}
+                  scrollEnabled={false}
+                />
+              </HScrollTable>
             )}
           </View>
         )}
@@ -1234,7 +1266,6 @@ const Invoices = () => {
                   receipt={selectedReceipt}
                   formatCurrency={formatCurrency}
                   isMobile={!isDesktop}
-                  isWeb={isWeb}
                 />
               </ScrollView>
             </View>
@@ -1249,12 +1280,10 @@ function ReceiptPreview({
   receipt,
   formatCurrency,
   isMobile,
-  isWeb,
 }: {
   receipt: ReceiptData;
   formatCurrency: (value?: number | string | null) => string;
   isMobile: boolean;
-  isWeb: boolean;
 }) {
   const totals = receipt.rows.reduce(
     (acc, row) => ({
@@ -1321,7 +1350,7 @@ function ReceiptPreview({
 
         <HorizontalScrollView
           horizontal
-          showsHorizontalScrollIndicator={!isWeb}
+          showsHorizontalScrollIndicator
         >
           <View
             className="mt-4"
