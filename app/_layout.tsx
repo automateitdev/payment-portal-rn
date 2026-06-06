@@ -1,22 +1,20 @@
+import { startIdleLogoutListener } from "@/redux/feature/idleLogout";
+import { startTokenExpirationListener } from "@/redux/feature/tokenExpired";
+import { persistor, store } from "@/redux/store";
+import * as NavigationBar from "expo-navigation-bar";
+import { Stack } from "expo-router";
+import * as Updates from "expo-updates";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "@/redux/store";
-import { Stack } from "expo-router";
 import "../global.css";
-import Toast from "react-native-toast-message";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { startIdleLogoutListener } from "@/redux/feature/idleLogout";
-import { toastConfig } from "@/components/shared/ToastConfig/ToastConfig";
-import { startTokenExpirationListener } from "@/redux/feature/tokenExpired";
-import * as Updates from "expo-updates";
-import * as NavigationBar from "expo-navigation-bar";
 
-import { useEffect } from "react";
-import { Alert, AppState, Platform } from "react-native";
-import { useColorScheme } from "nativewind";
-import { useAppSelector } from "@/redux/hook";
 import RichToast from "@/components/shared/CustomToast/RichToast";
 import { setRichToastRef } from "@/components/shared/CustomToast/message";
+import { useAppSelector } from "@/redux/hook";
+import { useColorScheme } from "nativewind";
+import { useEffect } from "react";
+import { Alert, AppState, Platform } from "react-native";
 
 export default function RootLayout() {
   useEffect(() => {
@@ -24,11 +22,10 @@ export default function RootLayout() {
       document.title = "Payment Portal";
     }
   }, []);
+
   useEffect(() => {
     const initializeUpdates = async () => {
       try {
-        console.log("📱 App starting - checking for updates...");
-
         // Check for updates silently
         const update = await Updates.checkForUpdateAsync();
 
@@ -102,7 +99,6 @@ export default function RootLayout() {
               edges={["top", "left", "right"]}
             >
               <Stack screenOptions={{ headerShown: false }} />
-              <Toast config={toastConfig} />
               <RichToast ref={(ref) => setRichToastRef(ref)} />
             </SafeAreaView>
           </ThemeWatcher>

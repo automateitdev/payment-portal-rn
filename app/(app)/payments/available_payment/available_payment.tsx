@@ -1,3 +1,4 @@
+import { showMessage } from "@/components/shared/CustomToast/message";
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
 import { useGetGeneralConfigsQuery } from "@/redux/allApi/generalConfigApi/generalConfigApi";
 import {
@@ -27,7 +28,6 @@ import {
   View,
 } from "react-native";
 import Collapsible from "react-native-collapsible";
-import { showMessage } from "@/components/shared/CustomToast/message";
 
 interface FeeSubhead {
   payapplies_id: number;
@@ -67,8 +67,10 @@ interface PaymentData {
   status: "success";
   charge_setup: ChargeSetup;
   all_charges: {
+  all_charges: {
     id: number;
     amount: string;
+  }[];
   }[];
   all_payments: {
     processed_payments: FeeHead[];
@@ -160,6 +162,7 @@ const AvailablePayment = () => {
       setAutoSelectedSubheads(newAutoSelected);
       setSelectedFeesubheads(newSelected);
     }
+  }, [feeHeads, student_online_payment_setting]);
   }, [feeHeads, student_online_payment_setting]);
 
   useEffect(() => {
@@ -377,6 +380,7 @@ const AvailablePayment = () => {
             // But usually, redirecting to a payment URL is preferred.
             // If the API returns HTML, it usually expects a self-submitting form.
             // For now, let's assume we can use the payment_url if it exists,
+            // For now, let's assume we can use the payment_url if it exists,
             // or we might need to render the HTML.
             if (response.payment_url) {
               window.location.href = response.payment_url;
@@ -459,8 +463,35 @@ const AvailablePayment = () => {
             messages.push(errorArray);
           }
         });
+      // 1. Handle nested errors object (e.g., system_error, exam_error, etc.)
+      if (error?.data?.errors) {
+        const errors = error.data.errors;
+        const messages: string[] = [];
+
+        Object.keys(errors).forEach((key) => {
+          const errorArray = errors[key];
+          if (Array.isArray(errorArray)) {
+            errorArray.forEach((err: any) => {
+              if (err?.message) messages.push(err.message);
+              else if (typeof err === "string") messages.push(err);
+            });
+          } else if (typeof errorArray === "string") {
+            messages.push(errorArray);
+          }
+        });
 
         if (messages.length > 0) {
+          errorMessage = messages.join("\n");
+        }
+      }
+      // 2. Handle direct system_error if not nested in errors
+      else if (error?.data?.system_error) {
+        if (Array.isArray(error.data.system_error)) {
+          errorMessage = error.data.system_error
+            .map((e: any) => e.message || e)
+            .join("\n");
+        } else {
+          errorMessage = error.data.system_error;
           errorMessage = messages.join("\n");
         }
       }
@@ -475,6 +506,7 @@ const AvailablePayment = () => {
         }
       }
       // 3. Fallback to other common fields
+      // 3. Fallback to other common fields
       else if (error?.data?.message) {
         errorMessage = error.data.message;
       } else if (error?.data?.error) {
@@ -483,6 +515,7 @@ const AvailablePayment = () => {
         errorMessage = error.message;
       }
 
+      showMessage("error", "Payment Error", errorMessage);
       showMessage("error", "Payment Error", errorMessage);
     }
   };
@@ -1395,7 +1428,7 @@ export default AvailablePayment;
 //   const fees_payment_by_web = generalConfigs?.fees_payment_by_web || "no";
 //   const student_online_payment_setting =
 //     generalConfigs?.student_online_payment_setting || "Due Upto Current Date";
-//   console.log("FROM GENERAL CONFIG STORE API", generalConfigs);
+//   ("FROM GENERAL CONFIG STORE API", generalConfigs);
 //   const userData = instituteData?.payload?.data?.user || {};
 //   const paymentData: PaymentData = paymentSearch?.payload?.data;
 //   const [paymentRequest, { isLoading: isPaymentProcessing }] =

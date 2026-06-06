@@ -1,11 +1,11 @@
 // AppMenu.tsx
+import { baseApi } from "@/redux/baseApi/baseApi";
 import { logout } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import AppMenuItem from "./AppMenuItem";
-import { baseApi } from "@/redux/baseApi/baseApi";
 interface AppMenuProps {
   onMenuPress?: () => void;
 }
@@ -87,7 +87,7 @@ const AppMenu = ({ onMenuPress }: AppMenuProps) => {
       <View className="border-t border-gray-200 bg-white px-5 py-4">
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => console.log("Settings pressed")}
+          onPress={() => "Settings pressed"}
           className="flex-row items-center py-2"
         >
           <Ionicons name="settings-outline" size={20} color="#6b7280" />
