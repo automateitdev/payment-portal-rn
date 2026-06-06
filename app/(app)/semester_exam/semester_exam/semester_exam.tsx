@@ -1339,10 +1339,6 @@ export default function SemesterExamScreen() {
                 <Text className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
                   Mark Sheet Download
                 </Text>
-                <Text className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Year ar exam select korlei transcript load hobe, tarpor
-                  phone-e PDF save korte parben.
-                </Text>
               </View>
 
               <View className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl px-4 py-3 border border-slate-200 dark:border-slate-700">

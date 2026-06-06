@@ -36,7 +36,7 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
       {/* LEFT - Just Logo */}
       <View className="flex-row items-center">
         <Text className="text-2xl font-black tracking-tighter text-slate-950 dark:text-white">
-          Edu<Text className="text-green-600">mate</Text>
+          Auto<Text className="text-green-600">Pay</Text>
         </Text>
       </View>
 
