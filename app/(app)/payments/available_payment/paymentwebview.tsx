@@ -1,9 +1,9 @@
 // src/screens/payments/PaymentWebView.tsx
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState, useRef } from "react";
+import { View, Text, ActivityIndicator, Alert } from "react-native";
 import { WebView, WebViewNavigation } from "react-native-webview";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PaymentWebView = () => {
   const router = useRouter();
@@ -30,7 +30,7 @@ const PaymentWebView = () => {
 
     // Check for success/failure URLs in the navigation
     const currentUrl = navState.url.toLowerCase();
-    ("FROM CURRENT URL ()", currentUrl);
+    console.log("FROM CURRENT URL CONSOLE.LOG()", currentUrl);
     // These are example URLs - adjust based on your payment gateway
     if (currentUrl.includes("success") || currentUrl.includes("approved")) {
       // Payment successful
@@ -245,8 +245,8 @@ export default PaymentWebView;
 //     const currentUrl = navState.url.toLowerCase();
 //     const currentTitle = navState.title?.toLowerCase() || "";
 
-//     ("🔗 Current URL:", currentUrl);
-//     ("📝 Current Title:", currentTitle);
+//     console.log("🔗 Current URL:", currentUrl);
+//     console.log("📝 Current Title:", currentTitle);
 
 //     // Detect which stage we're in
 //     detectPaymentStage(currentUrl, currentTitle);
@@ -265,7 +265,7 @@ export default PaymentWebView;
 //         title.includes("select")
 //       ) {
 //         setCurrentStage("bank_page");
-//         ("🏦 Bank selection page");
+//         console.log("🏦 Bank selection page");
 //       }
 //       // OTP/Verification page
 //       else if (
@@ -275,7 +275,7 @@ export default PaymentWebView;
 //         title.includes("verification")
 //       ) {
 //         setCurrentStage("otp");
-//         ("🔐 OTP/Verification page");
+//         console.log("🔐 OTP/Verification page");
 //       }
 //       // Completion page
 //       else if (
@@ -285,7 +285,7 @@ export default PaymentWebView;
 //         title.includes("response")
 //       ) {
 //         setCurrentStage("complete");
-//         ("✅ Payment completion page");
+//         console.log("✅ Payment completion page");
 //       }
 //     }
 //   };
@@ -308,10 +308,10 @@ export default PaymentWebView;
 //     );
 
 //     if (isSuccess) {
-//       ("✅ SUCCESS detected!");
+//       console.log("✅ SUCCESS detected!");
 //       handlePaymentSuccess();
 //     } else if (isFailure) {
-//       ("❌ FAILURE detected!");
+//       console.log("❌ FAILURE detected!");
 //       handlePaymentFailure();
 //     }
 //   };
@@ -502,7 +502,7 @@ export default PaymentWebView;
 //       // Check every 2 seconds as well
 //       setInterval(checkPageContent, 2000);
 
-//       ('SPG Web monitoring initialized');
+//       console.log('SPG Web monitoring initialized');
 //     })();
 //     true;
 //   `;
@@ -510,29 +510,29 @@ export default PaymentWebView;
 //   const handleMessage = (event: any) => {
 //     try {
 //       const data = JSON.parse(event.nativeEvent.data);
-//       ("📨 WebView Message:", data.type);
+//       console.log("📨 WebView Message:", data.type);
 
 //       switch (data.type) {
 //         case "SUCCESS_MESSAGE":
-//           ("✅ Success message found:", data.message);
+//           console.log("✅ Success message found:", data.message);
 //           handlePaymentSuccess();
 //           break;
 
 //         case "FAILURE_MESSAGE":
-//           ("❌ Failure message found:", data.message);
+//           console.log("❌ Failure message found:", data.message);
 //           handlePaymentFailure();
 //           break;
 
 //         case "TRANSACTION_ID":
-//           ("💰 Transaction ID found:", data.id);
+//           console.log("💰 Transaction ID found:", data.id);
 //           break;
 
 //         case "URL_CHANGE":
-//           ("🔗 URL changed to:", data.url);
+//           console.log("🔗 URL changed to:", data.url);
 //           break;
 //       }
 //     } catch (error) {
-//       ("Message parse error:", error);
+//       console.log("Message parse error:", error);
 //     }
 //   };
 
@@ -861,8 +861,8 @@ export default PaymentWebView;
 //     const currentUrl = navState.url.toLowerCase();
 //     const currentTitle = navState.title?.toLowerCase() || "";
 
-//     ("🔗 Current URL:", currentUrl);
-//     ("📝 Current Title:", currentTitle);
+//     console.log("🔗 Current URL:", currentUrl);
+//     console.log("📝 Current Title:", currentTitle);
 
 //     setCanGoBack(navState.canGoBack);
 //     setLoading(navState.loading);
@@ -886,11 +886,11 @@ export default PaymentWebView;
 
 //     // CRITICAL: If we're being redirected away from SPG to external site
 //     if (!isSPGUrl && !paymentCompleted) {
-//       ("🚫 External redirect detected:", currentUrl);
+//       console.log("🚫 External redirect detected:", currentUrl);
 
 //       if (isSuccessResult || isFailureResult) {
 //         // This is a payment result page on external domain
-//         ("🎯 Payment result on external domain");
+//         console.log("🎯 Payment result on external domain");
 
 //         // STOP the WebView immediately
 //         webViewRef.current?.stopLoading();
@@ -905,7 +905,7 @@ export default PaymentWebView;
 //         return;
 //       } else {
 //         // Block any other external navigation
-//         ("🛑 Blocking external navigation");
+//         console.log("🛑 Blocking external navigation");
 //         setIsExternalRedirect(true);
 
 //         // Go back to last valid SPG URL
@@ -946,7 +946,7 @@ export default PaymentWebView;
 //         title.includes("select")
 //       ) {
 //         setCurrentStage("bank_page");
-//         ("🏦 Bank selection page");
+//         console.log("🏦 Bank selection page");
 //       }
 //       // OTP/Verification page
 //       else if (
@@ -956,7 +956,7 @@ export default PaymentWebView;
 //         title.includes("verification")
 //       ) {
 //         setCurrentStage("otp");
-//         ("🔐 OTP/Verification page");
+//         console.log("🔐 OTP/Verification page");
 //       }
 //       // Completion page
 //       else if (
@@ -966,7 +966,7 @@ export default PaymentWebView;
 //         title.includes("response")
 //       ) {
 //         setCurrentStage("complete");
-//         ("✅ Payment completion page");
+//         console.log("✅ Payment completion page");
 //       }
 //     }
 //   };
@@ -989,10 +989,10 @@ export default PaymentWebView;
 //     );
 
 //     if (isSuccess) {
-//       ("✅ SUCCESS detected! Closing WebView...");
+//       console.log("✅ SUCCESS detected! Closing WebView...");
 //       handlePaymentSuccess();
 //     } else if (isFailure) {
-//       ("❌ FAILURE detected! Closing WebView...");
+//       console.log("❌ FAILURE detected! Closing WebView...");
 //       handlePaymentFailure();
 //     }
 //   };
@@ -1246,7 +1246,7 @@ export default PaymentWebView;
 //       // Check every 2 seconds
 //       setInterval(checkPageContent, 2000);
 
-//       ('SPG Web protection initialized');
+//       console.log('SPG Web protection initialized');
 //     })();
 //     true;
 //   `;
@@ -1254,26 +1254,26 @@ export default PaymentWebView;
 //   const handleMessage = (event: any) => {
 //     try {
 //       const data = JSON.parse(event.nativeEvent.data);
-//       ("📨 WebView Message:", data.type);
+//       console.log("📨 WebView Message:", data.type);
 
 //       switch (data.type) {
 //         case "SUCCESS_MESSAGE":
-//           ("✅ Success message found:", data.message);
+//           console.log("✅ Success message found:", data.message);
 //           handlePaymentSuccess();
 //           break;
 
 //         case "FAILURE_MESSAGE":
-//           ("❌ Failure message found:", data.message);
+//           console.log("❌ Failure message found:", data.message);
 //           handlePaymentFailure();
 //           break;
 
 //         case "TRANSACTION_ID":
-//           ("💰 Transaction ID found:", data.id);
+//           console.log("💰 Transaction ID found:", data.id);
 //           break;
 
 //         case "EXTERNAL_LINK_BLOCKED":
 //         case "EXTERNAL_FORM_BLOCKED":
-//           ("🚫 External action blocked:", data.url || data.action);
+//           console.log("🚫 External action blocked:", data.url || data.action);
 //           Alert.alert(
 //             "Navigation Blocked",
 //             "Please complete the payment within the secure payment gateway.",
@@ -1282,7 +1282,7 @@ export default PaymentWebView;
 //           break;
 //       }
 //     } catch (error) {
-//       ("Message parse error:", error);
+//       console.log("Message parse error:", error);
 //     }
 //   };
 
@@ -1742,7 +1742,7 @@ export default PaymentWebView;
 //   const injectedJavaScript = useMemo(
 //     () => `
 //     (function() {
-//       ('[PaymentJS] Monitoring started - ${gatewayType}');
+//       console.log('[PaymentJS] Monitoring started - ${gatewayType}');
 
 //       // ─── UCB auto-submit form ───
 //       if (document.getElementById('ucb-payment-form') || document.body.innerHTML.includes('Redirecting to UCB')) {
@@ -1785,7 +1785,7 @@ export default PaymentWebView;
 //   const handleMessage = useCallback(
 //     (event: WebViewMessageEvent) => {
 //       const msg = event.nativeEvent.data;
-//       ("[WebView Message]", msg);
+//       console.log("[WebView Message]", msg);
 
 //       if (msg === "UCB_FORM_AUTO_SUBMITTED") {
 //         setHasAutoSubmitted(true);
@@ -1928,7 +1928,7 @@ export default PaymentWebView;
 //           onLoadStart={() => setLoading(true)}
 //           onLoadEnd={() => setLoading(false)}
 //           onError={(s) => {
-//             ("WebView error:", s.nativeEvent);
+//             console.log("WebView error:", s.nativeEvent);
 //             if (!paymentCompleted) {
 //               Alert.alert("Connection Error", "Cannot reach payment gateway.", [
 //                 { text: "Retry", onPress: () => webViewRef.current?.reload() },
@@ -2173,7 +2173,7 @@ export default PaymentWebView;
 //           message: message || "",
 //         };
 //       } catch (error) {
-//         ("Error parsing reconciliation URL:", error);
+//         console.log("Error parsing reconciliation URL:", error);
 //         return {
 //           status: "unknown",
 //           invoice: "",
@@ -2313,7 +2313,7 @@ export default PaymentWebView;
 
 //       // ─── INTERCEPT reconciliation callback ───
 //       if (isReconciliationUrl(url) && !paymentCompleted) {
-//         ("🛑 Intercepting reconciliation callback:", url);
+//         console.log("🛑 Intercepting reconciliation callback:", url);
 
 //         // Stop WebView from loading the reconciliation page
 //         webViewRef.current?.stopLoading();
@@ -2321,11 +2321,11 @@ export default PaymentWebView;
 //         // Extract parameters from URL
 //         const params = extractReconciliationParams(url);
 
-//         ("📊 Reconciliation params:", params);
+//         console.log("📊 Reconciliation params:", params);
 
 //         // Handle based on status
 //         if (params.status === "200" || params.status === "success") {
-//           ("✅ Payment reconciliation successful");
+//           console.log("✅ Payment reconciliation successful");
 
 //           // Show success message in WebView and redirect to app
 //           webViewRef.current?.injectJavaScript(`
@@ -2357,7 +2357,7 @@ export default PaymentWebView;
 //           params.status === "fail" ||
 //           params.status === "error"
 //         ) {
-//           ("❌ Payment reconciliation failed");
+//           console.log("❌ Payment reconciliation failed");
 
 //           // Show failure message in WebView and redirect to app
 //           webViewRef.current?.injectJavaScript(`
@@ -2383,7 +2383,7 @@ export default PaymentWebView;
 //             });
 //           }, 1200);
 //         } else {
-//           ("❓ Unknown reconciliation status:", params.status);
+//           console.log("❓ Unknown reconciliation status:", params.status);
 
 //           // For unknown status, redirect back to payment gateway
 //           if (lastValidUrl) {
@@ -2398,7 +2398,7 @@ export default PaymentWebView;
 
 //       // ─── Block other external redirects ───
 //       if (!isAllowedUrl(url) && !paymentCompleted) {
-//         ("🚫 Blocking external redirect to:", url);
+//         console.log("🚫 Blocking external redirect to:", url);
 
 //         // Check if this might be a payment result page based on content
 //         const bodyText = title.toLowerCase();
@@ -2417,10 +2417,10 @@ export default PaymentWebView;
 //           urlLower.includes("error");
 
 //         if (isSuccess) {
-//           ("✅ Detected success on external page");
+//           console.log("✅ Detected success on external page");
 //           handlePaymentSuccess();
 //         } else if (isFailure) {
-//           ("❌ Detected failure on external page");
+//           console.log("❌ Detected failure on external page");
 //           handlePaymentFailure("Payment failed on external page");
 //         } else {
 //           // Not a result page, block and redirect back
@@ -2495,7 +2495,7 @@ export default PaymentWebView;
 //   const injectedJavaScript = useMemo(
 //     () => `
 //     (function() {
-//       ('[PaymentJS] Monitoring started - ${gatewayType}');
+//       console.log('[PaymentJS] Monitoring started - ${gatewayType}');
 
 //       const allowedDomains = ${JSON.stringify(ALLOWED_DOMAINS)};
 //       const backendDomain = '${BACKEND_DOMAIN}';
@@ -2528,7 +2528,7 @@ export default PaymentWebView;
 //           if (isReconciliationUrl(href)) {
 //             e.preventDefault();
 //             e.stopPropagation();
-//             ('Intercepting reconciliation link:', href);
+//             console.log('Intercepting reconciliation link:', href);
 
 //             // Extract status from URL
 //             const urlParams = new URLSearchParams(href.split('?')[1] || '');
@@ -2547,7 +2547,7 @@ export default PaymentWebView;
 //           if (!isUrlAllowed(href)) {
 //             e.preventDefault();
 //             e.stopPropagation();
-//             ('Blocked external link click:', href);
+//             console.log('Blocked external link click:', href);
 
 //             // Check if this is a success/failure redirect
 //             const isSuccess = href.includes('success') || href.includes('thank') || href.includes('complete');
@@ -2573,7 +2573,7 @@ export default PaymentWebView;
 //           // Check if it's a reconciliation form
 //           if (isReconciliationUrl(action)) {
 //             e.preventDefault();
-//             ('Intercepting reconciliation form submission:', action);
+//             console.log('Intercepting reconciliation form submission:', action);
 
 //             // You could extract form data here if needed
 //             window.ReactNativeWebView.postMessage('RECONCILE_FORM_SUBMITTED');
@@ -2583,7 +2583,7 @@ export default PaymentWebView;
 
 //           if (!isUrlAllowed(action)) {
 //             e.preventDefault();
-//             ('Blocked external form submission:', action);
+//             console.log('Blocked external form submission:', action);
 
 //             // Check form data for result indicators
 //             const formData = new FormData(form);
@@ -2642,7 +2642,7 @@ export default PaymentWebView;
 //   const handleMessage = useCallback(
 //     (event: WebViewMessageEvent) => {
 //       const msg = event.nativeEvent.data;
-//       ("[WebView Message]", msg);
+//       console.log("[WebView Message]", msg);
 
 //       if (msg === "UCB_FORM_AUTO_SUBMITTED") {
 //         setHasAutoSubmitted(true);
@@ -2650,12 +2650,12 @@ export default PaymentWebView;
 //       }
 
 //       if (msg === "RECONCILE_SUCCESS") {
-//         ("✅ Reconciliation success message received");
+//         console.log("✅ Reconciliation success message received");
 //         handlePaymentSuccess();
 //       }
 
 //       if (msg === "RECONCILE_FAILURE") {
-//         ("❌ Reconciliation failure message received");
+//         console.log("❌ Reconciliation failure message received");
 //         handlePaymentFailure("Payment verification failed");
 //       }
 
@@ -2761,7 +2761,7 @@ export default PaymentWebView;
 //           onLoadStart={() => setLoading(true)}
 //           onLoadEnd={() => setLoading(false)}
 //           onError={(s) => {
-//             ("WebView error:", s.nativeEvent);
+//             console.log("WebView error:", s.nativeEvent);
 //             if (!paymentCompleted) {
 //               Alert.alert("Connection Error", "Cannot reach payment gateway.", [
 //                 { text: "Retry", onPress: () => webViewRef.current?.reload() },
@@ -2788,7 +2788,7 @@ export default PaymentWebView;
 //           onShouldStartLoadWithRequest={(request) => {
 //             // INTERCEPT reconciliation URLs - DON'T let them load
 //             if (isReconciliationUrl(request.url)) {
-//               (
+//               console.log(
 //                 "🛑 Intercepting reconciliation request:",
 //                 request.url,
 //               );
@@ -2813,7 +2813,7 @@ export default PaymentWebView;
 
 //             // Block any other external navigation attempts
 //             if (!isAllowedUrl(request.url) && !paymentCompleted) {
-//               ("🚫 Blocked external request to:", request.url);
+//               console.log("🚫 Blocked external request to:", request.url);
 //               return false;
 //             }
 //             return true;
@@ -3060,7 +3060,7 @@ export default PaymentWebView;
 //           message: message || "",
 //         };
 //       } catch (error) {
-//         ("Error parsing reconciliation URL:", error);
+//         console.log("Error parsing reconciliation URL:", error);
 //         return {
 //           status: "unknown",
 //           invoice: "",
@@ -3191,7 +3191,7 @@ export default PaymentWebView;
 //       const urlLower = url.toLowerCase();
 //       const title = navState.title || "";
 
-//       ("🔗 Navigation:", { url, title });
+//       console.log("🔗 Navigation:", { url, title });
 
 //       setCanGoBack(navState.canGoBack);
 //       setLoading(navState.loading);
@@ -3203,7 +3203,7 @@ export default PaymentWebView;
 
 //       // ─── INTERCEPT reconciliation callback ───
 //       if (isReconciliationUrl(url) && !paymentCompleted) {
-//         ("🛑 Intercepting reconciliation callback:", url);
+//         console.log("🛑 Intercepting reconciliation callback:", url);
 
 //         // Stop WebView from loading the reconciliation page
 //         webViewRef.current?.stopLoading();
@@ -3211,11 +3211,11 @@ export default PaymentWebView;
 //         // Extract parameters from URL
 //         const params = extractReconciliationParams(url);
 
-//         ("📊 Reconciliation params:", params);
+//         console.log("📊 Reconciliation params:", params);
 
 //         // Handle based on status
 //         if (params.status === "200" || params.status === "success") {
-//           ("✅ Payment reconciliation successful");
+//           console.log("✅ Payment reconciliation successful");
 
 //           // Show success message in WebView and redirect to app
 //           webViewRef.current?.injectJavaScript(`
@@ -3247,7 +3247,7 @@ export default PaymentWebView;
 //           params.status === "fail" ||
 //           params.status === "error"
 //         ) {
-//           ("❌ Payment reconciliation failed");
+//           console.log("❌ Payment reconciliation failed");
 
 //           // Show failure message in WebView and redirect to app
 //           webViewRef.current?.injectJavaScript(`
@@ -3273,7 +3273,7 @@ export default PaymentWebView;
 //             });
 //           }, 1200);
 //         } else {
-//           ("❓ Unknown reconciliation status:", params.status);
+//           console.log("❓ Unknown reconciliation status:", params.status);
 
 //           // For unknown status, redirect back to payment gateway
 //           if (lastValidUrl) {
@@ -3288,7 +3288,7 @@ export default PaymentWebView;
 
 //       // ─── Block other external redirects ───
 //       if (!isAllowedUrl(url) && !paymentCompleted) {
-//         ("🚫 Blocking external redirect to:", url);
+//         console.log("🚫 Blocking external redirect to:", url);
 
 //         // Check if this might be a payment result page based on content
 //         const bodyText = title.toLowerCase();
@@ -3307,10 +3307,10 @@ export default PaymentWebView;
 //           urlLower.includes("error");
 
 //         if (isSuccess) {
-//           ("✅ Detected success on external page");
+//           console.log("✅ Detected success on external page");
 //           handlePaymentSuccess();
 //         } else if (isFailure) {
-//           ("❌ Detected failure on external page");
+//           console.log("❌ Detected failure on external page");
 //           handlePaymentFailure("Payment failed on external page");
 //         } else {
 //           // Not a result page, block and redirect back
@@ -3385,7 +3385,7 @@ export default PaymentWebView;
 //   const injectedJavaScript = useMemo(
 //     () => `
 //     (function() {
-//       ('[PaymentJS] Monitoring started - ${gatewayType}');
+//       console.log('[PaymentJS] Monitoring started - ${gatewayType}');
 
 //       const allowedDomains = ${JSON.stringify(ALLOWED_DOMAINS)};
 //       const backendDomain = '${BACKEND_DOMAIN}';
@@ -3418,7 +3418,7 @@ export default PaymentWebView;
 //           if (isReconciliationUrl(href)) {
 //             e.preventDefault();
 //             e.stopPropagation();
-//             ('Intercepting reconciliation link:', href);
+//             console.log('Intercepting reconciliation link:', href);
 
 //             // Extract status from URL
 //             const urlParams = new URLSearchParams(href.split('?')[1] || '');
@@ -3437,7 +3437,7 @@ export default PaymentWebView;
 //           if (!isUrlAllowed(href)) {
 //             e.preventDefault();
 //             e.stopPropagation();
-//             ('Blocked external link click:', href);
+//             console.log('Blocked external link click:', href);
 
 //             // Check if this is a success/failure redirect
 //             const isSuccess = href.includes('success') || href.includes('thank') || href.includes('complete');
@@ -3463,7 +3463,7 @@ export default PaymentWebView;
 //           // Check if it's a reconciliation form
 //           if (isReconciliationUrl(action)) {
 //             e.preventDefault();
-//             ('Intercepting reconciliation form submission:', action);
+//             console.log('Intercepting reconciliation form submission:', action);
 
 //             // You could extract form data here if needed
 //             window.ReactNativeWebView.postMessage('RECONCILE_FORM_SUBMITTED');
@@ -3473,7 +3473,7 @@ export default PaymentWebView;
 
 //           if (!isUrlAllowed(action)) {
 //             e.preventDefault();
-//             ('Blocked external form submission:', action);
+//             console.log('Blocked external form submission:', action);
 
 //             // Check form data for result indicators
 //             const formData = new FormData(form);
@@ -3585,13 +3585,13 @@ export default PaymentWebView;
 //     (event: WebViewMessageEvent) => {
 //       try {
 //         const msg = event.nativeEvent.data;
-//         ("[WebView Message]", msg);
+//         console.log("[WebView Message]", msg);
 
 //         // Try to parse as JSON first
 //         try {
 //           const data = JSON.parse(msg);
 //           if (data.type === "SSLCOMMERZ_ERROR") {
-//             ("❌ SSLCommerz error detected:", data.message);
+//             console.log("❌ SSLCommerz error detected:", data.message);
 //             handlePaymentFailure(data.message || "SSLCommerz payment error");
 //             return;
 //           }
@@ -3605,12 +3605,12 @@ export default PaymentWebView;
 //         }
 
 //         if (msg === "RECONCILE_SUCCESS") {
-//           ("✅ Reconciliation success message received");
+//           console.log("✅ Reconciliation success message received");
 //           handlePaymentSuccess();
 //         }
 
 //         if (msg === "RECONCILE_FAILURE") {
-//           ("❌ Reconciliation failure message received");
+//           console.log("❌ Reconciliation failure message received");
 //           handlePaymentFailure("Payment verification failed");
 //         }
 
@@ -3632,7 +3632,7 @@ export default PaymentWebView;
 //           }
 //         }
 //       } catch (error) {
-//         ("Error handling WebView message:", error);
+//         console.log("Error handling WebView message:", error);
 //       }
 //     },
 //     [paymentCompleted, handlePaymentSuccess, handlePaymentFailure],
@@ -3746,7 +3746,7 @@ export default PaymentWebView;
 //             }
 //           }}
 //           onError={(s) => {
-//             ("WebView error:", s.nativeEvent);
+//             console.log("WebView error:", s.nativeEvent);
 //             if (!paymentCompleted) {
 //               Alert.alert("Connection Error", "Cannot reach payment gateway.", [
 //                 { text: "Retry", onPress: () => webViewRef.current?.reload() },
@@ -3773,7 +3773,7 @@ export default PaymentWebView;
 //           onShouldStartLoadWithRequest={(request) => {
 //             // INTERCEPT reconciliation URLs - DON'T let them load
 //             if (isReconciliationUrl(request.url)) {
-//               (
+//               console.log(
 //                 "🛑 Intercepting reconciliation request:",
 //                 request.url,
 //               );
@@ -3798,7 +3798,7 @@ export default PaymentWebView;
 
 //             // Block any other external navigation attempts
 //             if (!isAllowedUrl(request.url) && !paymentCompleted) {
-//               ("🚫 Blocked external request to:", request.url);
+//               console.log("🚫 Blocked external request to:", request.url);
 //               return false;
 //             }
 //             return true;

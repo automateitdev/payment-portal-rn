@@ -1,8 +1,8 @@
-import { showMessage } from "@/components/shared/CustomToast/message";
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
 import { useFetchInvoicesQuery } from "@/redux/allApi/invoices/invoicesApi";
 import { useAppSelector } from "@/redux/hook";
 import { RootState } from "@/redux/store";
+import { showToast } from "@/utils/toast";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
@@ -683,7 +683,7 @@ const Invoices = () => {
       frameWindow.focus();
       frameWindow.print();
       cleanup();
-      showMessage("success", "Print dialog opened. Choose Save as PDF to download.");
+      showToast("success", "Print dialog opened. Choose Save as PDF to download.");
     };
 
     const frameDocument =
@@ -720,7 +720,7 @@ const Invoices = () => {
       );
 
     if (!permissions.granted) {
-      showMessage("error", "Download folder permission was not granted.");
+      showToast("error", "Download folder permission was not granted.");
       return;
     }
 
@@ -736,7 +736,7 @@ const Invoices = () => {
       { encoding: FileSystem.EncodingType.Base64 },
     );
 
-    showMessage("success", "PDF saved to your selected Downloads folder.");
+    showToast("success", "PDF saved to your selected Downloads folder.");
   };
 
   const generatePDF = useCallback(
@@ -772,7 +772,7 @@ const Invoices = () => {
           to: fileUri,
         });
 
-        showMessage("success", "PDF saved inside app documents.");
+        showToast("success", "PDF saved inside app documents.");
         Alert.alert("PDF Saved", `Saved to:\n${fileUri}`);
       } catch (pdfError: unknown) {
         console.error("PDF error:", pdfError);
