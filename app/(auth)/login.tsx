@@ -221,7 +221,7 @@ const LoginScreen = () => {
             <Text style={styles.webSubtitle}>
               Manage your academic fees and payments with ease.
             </Text>
-            {renderVideo()}
+            {/* {renderVideo()} */}
           </View>
 
           {/* Right Side: Login Form */}
@@ -287,7 +287,7 @@ const LoginScreen = () => {
           </View>
 
           {renderForm()}
-          {renderVideo()}
+          {/* {renderVideo()} */}
 
           <View style={styles.footer}>
             <Text style={styles.footerLabel}>Connect with us</Text>

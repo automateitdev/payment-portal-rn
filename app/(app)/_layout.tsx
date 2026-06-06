@@ -19,7 +19,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TabIcon = ({
   name,
@@ -59,6 +59,7 @@ const AppLayout = () => {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -184,8 +185,8 @@ const AppLayout = () => {
             backgroundColor: isDark ? "#1e293b" : "#ffffff",
             borderTopWidth: 1,
             borderTopColor: isDark ? "#334155" : "#f1f5f9",
-            height: 65,
-            paddingBottom: 8,
+            height: 65 + insets.bottom,
+            paddingBottom: 8 + insets.bottom,
             paddingTop: 8,
             elevation: 8,
             shadowColor: isDark ? "#000" : "#000",
