@@ -1,3 +1,4 @@
+import { showMessage } from "@/components/shared/CustomToast/message";
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
 import { useGetGeneralConfigsQuery } from "@/redux/allApi/generalConfigApi/generalConfigApi";
 import {
@@ -27,7 +28,6 @@ import {
   View,
 } from "react-native";
 import Collapsible from "react-native-collapsible";
-import { showMessage } from "@/components/shared/CustomToast/message";
 
 interface FeeSubhead {
   payapplies_id: number;
@@ -439,7 +439,7 @@ const AvailablePayment = () => {
       setConfirmPaymentDialog(false);
     } catch (error: any) {
       setConfirmPaymentDialog(false);
-      console.log("Payment Error Context:", error);
+      ("Payment Error Context:", error);
 
       let errorMessage = "Failed to process payment. Please try again.";
 
@@ -1395,7 +1395,7 @@ export default AvailablePayment;
 //   const fees_payment_by_web = generalConfigs?.fees_payment_by_web || "no";
 //   const student_online_payment_setting =
 //     generalConfigs?.student_online_payment_setting || "Due Upto Current Date";
-//   console.log("FROM GENERAL CONFIG STORE API", generalConfigs);
+//   ("FROM GENERAL CONFIG STORE API", generalConfigs);
 //   const userData = instituteData?.payload?.data?.user || {};
 //   const paymentData: PaymentData = paymentSearch?.payload?.data;
 //   const [paymentRequest, { isLoading: isPaymentProcessing }] =

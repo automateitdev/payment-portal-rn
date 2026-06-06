@@ -29,7 +29,7 @@ export default function DashboardScreen() {
     useGetInstituteInfoQuery({}, { refetchOnMountOrArgChange: true });
 
   const user = data?.payload?.data?.user || {};
-console.log(user)
+  user;
   if (isLoading || isFetching) {
     return (
       <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center">

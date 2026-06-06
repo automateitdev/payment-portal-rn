@@ -5,23 +5,22 @@ import { baseApi } from "@/redux/baseApi/baseApi";
 import { setUser } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  Dimensions,
   KeyboardAvoidingView,
+  Linking,
   Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Linking,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import YoutubeIframe from "react-native-youtube-iframe";
 
 type LoginForm = {
   institute_id: string;
@@ -84,7 +83,7 @@ const LoginScreen = () => {
   };
 
   const openLink = (url: string) => {
-    Linking.openURL(url).catch(() => console.log("Error opening link"));
+    Linking.openURL(url).catch(() => "Error opening link");
   };
 
   const renderForm = () => (
@@ -188,23 +187,23 @@ const LoginScreen = () => {
     </View>
   );
 
-  const renderVideo = () => (
-    <View style={styles.videoCard}>
-      <View style={styles.videoHeader}>
-        <Ionicons name="play-circle" size={18} color="#16A34A" />
-        <Text style={styles.videoTitle}>Need help?</Text>
-      </View>
-      <Text style={styles.videoSub}>Watch our guide on how to pay.</Text>
-      <View style={styles.videoWrapper}>
-        <YoutubeIframe
-          height={videoHeight}
-          width={videoWidth}
-          play={isPlaying}
-          videoId={"xtFYdAGeT-k"}
-        />
-      </View>
-    </View>
-  );
+  // const renderVideo = () => (
+  //   <View style={styles.videoCard}>
+  //     <View style={styles.videoHeader}>
+  //       <Ionicons name="play-circle" size={18} color="#16A34A" />
+  //       <Text style={styles.videoTitle}>Need help?</Text>
+  //     </View>
+  //     <Text style={styles.videoSub}>Watch our guide on how to pay.</Text>
+  //     <View style={styles.videoWrapper}>
+  //       <YoutubeIframe
+  //         height={videoHeight}
+  //         width={videoWidth}
+  //         play={isPlaying}
+  //         videoId={"xtFYdAGeT-k"}
+  //       />
+  //     </View>
+  //   </View>
+  // );
 
   if (isLargeScreen) {
     return (
@@ -221,7 +220,8 @@ const LoginScreen = () => {
             <Text style={styles.webSubtitle}>
               Manage your academic fees and payments with ease.
             </Text>
-            {renderVideo()}
+
+            {/* {renderVideo()} */}
           </View>
 
           {/* Right Side: Login Form */}
@@ -287,7 +287,7 @@ const LoginScreen = () => {
           </View>
 
           {renderForm()}
-          {renderVideo()}
+          {/* {renderVideo()} */}
 
           <View style={styles.footer}>
             <Text style={styles.footerLabel}>Connect with us</Text>
