@@ -1,5 +1,6 @@
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
 import { useAppSelector } from "@/redux/hook";
+// import NoticeBanner from "@/components/NoticeBanner/NoticeBanner";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -29,7 +30,6 @@ export default function DashboardScreen() {
     useGetInstituteInfoQuery({}, { refetchOnMountOrArgChange: true });
 
   const user = data?.payload?.data?.user || {};
-console.log(user)
   if (isLoading || isFetching) {
     return (
       <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center">
@@ -86,6 +86,9 @@ console.log(user)
             alignSelf: "center",
           }}
         >
+          {/* Bank closing notice */}
+          {/* <NoticeBanner className="mb-4" /> */}
+
           <View
             className="bg-white dark:bg-slate-900 rounded-[28px] p-5 relative overflow-hidden border border-slate-200/80 dark:border-slate-800"
             style={styles.heroCard}

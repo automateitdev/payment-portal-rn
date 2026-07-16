@@ -87,7 +87,6 @@ const AppMenu = ({ onMenuPress }: AppMenuProps) => {
       <View className="border-t border-gray-200 bg-white px-5 py-4">
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => console.log("Settings pressed")}
           className="flex-row items-center py-2"
         >
           <Ionicons name="settings-outline" size={20} color="#6b7280" />

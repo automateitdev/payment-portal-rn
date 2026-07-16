@@ -1,34 +1,31 @@
 {
   "expo": {
-    "name": "Payment Portal",
-    "slug": "Payment_Portal",
+    "name": "AutoPay",
+    "slug": "AutoPay",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "paymentportal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": [
-      "android",
-      "web"
-    ],
+    "platforms": ["android", "web"],
     "updates": {
       "fallbackToCacheTimeout": 0,
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "url": "https://u.expo.dev/35fc3047-918f-4f52-a5b9-dd1b12c2c106"
+      "url": "https://u.expo.dev/e8b05647-0993-4b0c-8a4e-b9afcdc8478a"
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
     "ios": {
       "infoPlist": {
-        "CFBundleDisplayName": "Payment Portal"
+        "CFBundleDisplayName": "AutoPay"
       },
       "supportsTablet": true
     },
     "android": {
-      "label": "Payment Portal",
+      "label": "AutoPay",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png",
@@ -37,7 +34,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.jim0102.Payment_Portal",
+      "package": "pay.academyims.com",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -48,10 +45,7 @@
               "pathPrefix": "/available_payment"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -87,7 +81,15 @@
         "origin": false
       },
       "eas": {
-        "projectId": "7a2b719a-8777-4e17-9ec6-7d2eed5faca2"
+        "projectId": "e8b05647-0993-4b0c-8a4e-b9afcdc8478a"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./ServiceAccount.json",
+        "track": "production"
       }
     }
   }

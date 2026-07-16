@@ -19,6 +19,8 @@ import {
   Dimensions,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import YoutubeIframe from "react-native-youtube-iframe";
@@ -57,6 +59,16 @@ const LoginScreen = () => {
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const dispatch = useAppDispatch();
   const [isPlaying, setIsPlaying] = useState(false);
+  const socials = [
+    {
+      icon: "logo-linkedin",
+      url: "https://www.linkedin.com/company/automateitbd",
+    },
+    { icon: "logo-facebook", url: "https://www.facebook.com/automateitbd" },
+    { icon: "logo-youtube", url: "https://www.youtube.com/@automateitlimited" },
+    { icon: "call", url: "tel:+8809613241234" },
+    { icon: "logo-whatsapp", url: "https://wa.me/+8801335127799" },
+  ] as const;
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -167,24 +179,21 @@ const LoginScreen = () => {
         <Text style={styles.errorText}>{errors.custom_student_id.message}</Text>
       )}
 
-      <TouchableOpacity
-        onPress={handleSubmit(onSubmit)}
-        disabled={isLoading}
-        activeOpacity={0.8}
-        style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-      >
-        <Text style={styles.loginButtonText}>
-          {isLoading ? "Processing..." : "Continue"}
-        </Text>
-        {!isLoading && (
-          <Ionicons
-            name="arrow-forward"
-            size={18}
-            color="white"
-            style={{ marginLeft: 8 }}
-          />
-        )}
-      </TouchableOpacity>
+      <View className="my-3 self-start">
+        <TouchableOpacity
+          activeOpacity={0.9}
+          className={`flex-row items-center ${isLoading ? "bg-indigo-400" : "bg-indigo-600"} h-9 rounded-full px-4`}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
+        >
+          <Text className="text-white font-bold text-sm mr-2">Continue</Text>
+          {isLoading ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Ionicons name="arrow-forward" size={16} color="white" />
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -200,7 +209,7 @@ const LoginScreen = () => {
           height={videoHeight}
           width={videoWidth}
           play={isPlaying}
-          videoId={"xtFYdAGeT-k"}
+          videoId={"f3k_AE_J_kk"}
         />
       </View>
     </View>
@@ -221,7 +230,7 @@ const LoginScreen = () => {
             <Text style={styles.webSubtitle}>
               Manage your academic fees and payments with ease.
             </Text>
-            {/* {renderVideo()} */}
+            {renderVideo()}
           </View>
 
           {/* Right Side: Login Form */}
@@ -287,34 +296,21 @@ const LoginScreen = () => {
           </View>
 
           {renderForm()}
-          {/* {renderVideo()} */}
+          {renderVideo()}
 
-          <View style={styles.footer}>
-            <Text style={styles.footerLabel}>Connect with us</Text>
-            <View style={styles.socialRow}>
-              {[
-                {
-                  name: "logo-facebook",
-                  color: "#1877F2",
-                  url: "https://facebook.com/automateitbd",
-                },
-                {
-                  name: "logo-linkedin",
-                  color: "#0077b5",
-                  url: "https://linkedin.com/company/automateitbd",
-                },
-                { name: "call", color: "#16A34A", url: "tel:+8809613241234" },
-              ].map((item, index) => (
+          <View className="items-center mt-2">
+            {/* Social Row */}
+            <View
+              className="flex-row items-center justify-center mt-3"
+              style={{ gap: 8 }}
+            >
+              {socials.map((s) => (
                 <TouchableOpacity
-                  key={index}
-                  style={styles.socialCircle}
-                  onPress={() => openLink(item.url)}
+                  key={s.icon}
+                  onPress={() => Linking.openURL(s.url)}
+                  className="w-9 h-9 rounded-full bg-indigo-600 items-center justify-center"
                 >
-                  <Ionicons
-                    name={item.name as any}
-                    size={20}
-                    color={item.color}
-                  />
+                  <Ionicons name={s.icon as any} size={16} color="white" />
                 </TouchableOpacity>
               ))}
             </View>

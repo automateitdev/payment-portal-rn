@@ -28,6 +28,7 @@ import {
 } from "react-native";
 import Collapsible from "react-native-collapsible";
 import { showMessage } from "@/components/shared/CustomToast/message";
+// import NoticeBanner from "@/components/NoticeBanner/NoticeBanner";
 
 interface FeeSubhead {
   payapplies_id: number;
@@ -439,7 +440,6 @@ const AvailablePayment = () => {
       setConfirmPaymentDialog(false);
     } catch (error: any) {
       setConfirmPaymentDialog(false);
-      console.log("Payment Error Context:", error);
 
       let errorMessage = "Failed to process payment. Please try again.";
 
@@ -996,6 +996,9 @@ const AvailablePayment = () => {
           renderItem={() => null}
           ListHeaderComponent={
             <>
+              {/* Bank closing notice */}
+              {/* <NoticeBanner className="mx-4 mt-5" /> */}
+
               {/* Student Info Card */}
               <View className="mx-4 mt-5 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
                 <Text className="text-xl font-bold text-blue-700 dark:text-blue-400 mb-3">
@@ -1395,7 +1398,6 @@ export default AvailablePayment;
 //   const fees_payment_by_web = generalConfigs?.fees_payment_by_web || "no";
 //   const student_online_payment_setting =
 //     generalConfigs?.student_online_payment_setting || "Due Upto Current Date";
-//   console.log("FROM GENERAL CONFIG STORE API", generalConfigs);
 //   const userData = instituteData?.payload?.data?.user || {};
 //   const paymentData: PaymentData = paymentSearch?.payload?.data;
 //   const [paymentRequest, { isLoading: isPaymentProcessing }] =
