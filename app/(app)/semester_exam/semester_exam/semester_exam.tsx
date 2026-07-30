@@ -90,6 +90,14 @@ type StudentResult = {
       mother_name_english?: string;
       guardian_mobile?: string;
     };
+    academic_details?: {
+      academic_year_name?: string;
+      department_name?: string;
+      custom_student_id?: string;
+      group_name?: string;
+      roll?: number | string;
+      class_shift_section?: string;
+    };
   };
   merit_info?: {
     class_position?: number;
@@ -504,16 +512,23 @@ const getTranscriptData = (
       studentResult.student_info?.guardian_details?.father_name_english || "-",
     motherName:
       studentResult.student_info?.guardian_details?.mother_name_english || "-",
-    studentId: toLabelValue(studentResult.student_id),
-    roll: toLabelValue(studentResult.roll),
+    studentId: toLabelValue(
+      studentResult.student_info?.academic_details?.custom_student_id ||
+        studentResult.student_id,
+    ),
+    roll: toLabelValue(
+      studentResult.student_info?.academic_details?.roll || studentResult.roll,
+    ),
     department: toLabelValue(
-      examInfo?.group || // using group as dept if available from exam list
+      studentResult.student_info?.academic_details?.department_name ||
+        examInfo?.group || // using group as dept if available from exam list
         configs.find((c) => c.department_name)?.department_name ||
         gradeItem.department_name ||
         configItem.department_name ||
         configItem.subject_type,
     ),
     classShiftSection:
+      studentResult.student_info?.academic_details?.class_shift_section ||
       [
         capitalize(
           examInfo?.class ||
@@ -536,10 +551,12 @@ const getTranscriptData = (
         ),
       ]
         .filter(Boolean)
-        .join("-") || "-",
+        .join("-") ||
+      "-",
     group:
       capitalize(
-        examInfo?.group ||
+        studentResult.student_info?.academic_details?.group_name ||
+          examInfo?.group ||
           configs.find((c) => c.group_name)?.group_name ||
           configItem.group_name ||
           configItem.group,
@@ -1293,24 +1310,12 @@ export default function SemesterExamScreen() {
       },
     );
 
-    if (!data) {
-      return data;
-    }
-
-    return {
-      ...data,
-      studentId: toLabelValue(student?.student_id),
-      department: toLabelValue(student?.department_name),
-      group: toLabelValue(student?.group),
-    };
+    return data;
   }, [
     resultPayload,
     selectedExamOption?.label,
     selectedYearOption?.label,
     selectedExamData,
-    student?.student_id,
-    student?.department_name,
-    student?.group,
   ]);
 
   const downloadPdfOnWeb = async (html: string) => {
@@ -1627,8 +1632,8 @@ export default function SemesterExamScreen() {
               <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={handleDownload}
-                // disabled={true}
-                disabled={!hasResult || downloading}
+                disabled={true}
+                // disabled={!hasResult || downloading}
                 className={`h-[56px] rounded-2xl px-5 flex-row items-center justify-center ${
                   hasResult ? "bg-emerald-500" : "bg-slate-200"
                 }`}
