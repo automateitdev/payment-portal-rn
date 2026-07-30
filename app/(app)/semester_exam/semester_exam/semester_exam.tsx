@@ -1297,15 +1297,21 @@ export default function SemesterExamScreen() {
       return data;
     }
 
-    return { ...data, studentId: toLabelValue(student?.student_id) };
+    return {
+      ...data,
+      studentId: toLabelValue(student?.student_id),
+      department: toLabelValue(student?.department_name),
+      group: toLabelValue(student?.group),
+    };
   }, [
-      resultPayload,
-      selectedExamOption?.label,
-      selectedYearOption?.label,
-      selectedExamData,
-      student?.student_id,
-    ],
-  );
+    resultPayload,
+    selectedExamOption?.label,
+    selectedYearOption?.label,
+    selectedExamData,
+    student?.student_id,
+    student?.department_name,
+    student?.group,
+  ]);
 
   const downloadPdfOnWeb = async (html: string) => {
     if (typeof document === "undefined") {
@@ -1529,15 +1535,27 @@ export default function SemesterExamScreen() {
                   style={{ gap: 6 }}
                 >
                   <View className="flex-row items-center justify-between">
-                    <Text selectable={true} className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <Text
+                      selectable={true}
+                      className="text-[11px] text-slate-400 dark:text-slate-500"
+                    >
                       SID
                     </Text>
-                    <Text selectable={true} className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    <Text
+                      selectable={true}
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+                    >
                       {student?.student_id || "-"}
                     </Text>
                   </View>
-                  <View className="flex-row items-center justify-between" style={{ gap: 12 }}>
-                    <Text selectable={true} className="text-[11px] text-slate-400 dark:text-slate-500">
+                  <View
+                    className="flex-row items-center justify-between"
+                    style={{ gap: 12 }}
+                  >
+                    <Text
+                      selectable={true}
+                      className="text-[11px] text-slate-400 dark:text-slate-500"
+                    >
                       Institute
                     </Text>
                     <Text
@@ -1550,10 +1568,16 @@ export default function SemesterExamScreen() {
                     </Text>
                   </View>
                   <View className="flex-row items-center justify-between">
-                    <Text selectable={true} className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <Text
+                      selectable={true}
+                      className="text-[11px] text-slate-400 dark:text-slate-500"
+                    >
                       Institute ID
                     </Text>
-                    <Text selectable={true} className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    <Text
+                      selectable={true}
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+                    >
                       {student?.institute_id || "-"}
                     </Text>
                   </View>
@@ -1603,6 +1627,7 @@ export default function SemesterExamScreen() {
               <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={handleDownload}
+                // disabled={true}
                 disabled={!hasResult || downloading}
                 className={`h-[56px] rounded-2xl px-5 flex-row items-center justify-center ${
                   hasResult ? "bg-emerald-500" : "bg-slate-200"
