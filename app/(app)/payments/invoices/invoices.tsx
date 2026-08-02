@@ -256,22 +256,23 @@ const Invoices = () => {
   // Narrow web windows & all mobile devices use the horizontal-scroll table.
   const useFlexLayout = isWeb && width >= 768;
 
-  const user = useAppSelector((state: RootState) => state.auth.user);
   const themeMode = useAppSelector((state: RootState) => state.theme.mode);
   const isDark = themeMode === "dark";
-  const academicYearId = user?.academicYear?.[0]?.id ?? null;
 
   const { data: instituteData } = useGetInstituteInfoQuery({});
   const userData = useMemo(
     () => instituteData?.payload?.data?.user || {},
     [instituteData],
   );
-
-  const { data: invoicesResponse, isLoading, error, refetch } =
-    useFetchInvoicesQuery(
-      { academic_year_id: academicYearId, student_id: userData.id },
-      { skip: !academicYearId || !userData.id },
-    );
+  const {
+    data: invoicesResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useFetchInvoicesQuery(
+    { custom_student_id: userData.student_id },
+    { skip: !userData.student_id },
+  );
 
   const invoices: InvoiceItem[] = Array.isArray(invoicesResponse)
     ? invoicesResponse
@@ -310,7 +311,7 @@ const Invoices = () => {
   };
 
   const formatCurrency = (value?: number | string | null) => {
-    const num = typeof value === "string" ? parseFloat(value) : value ?? 0;
+    const num = typeof value === "string" ? parseFloat(value) : (value ?? 0);
     return Number.isNaN(num)
       ? "0.00"
       : num.toLocaleString("en-US", {
@@ -320,7 +321,7 @@ const Invoices = () => {
   };
 
   const toNumber = (value?: string | number | null) => {
-    const num = typeof value === "string" ? parseFloat(value) : value ?? 0;
+    const num = typeof value === "string" ? parseFloat(value) : (value ?? 0);
     return Number.isNaN(num) ? 0 : num;
   };
 
@@ -390,17 +391,19 @@ const Invoices = () => {
     (invoice: InvoiceItem): ReceiptData => {
       const firstDetail = invoice.pay_invoice_details?.[0];
       const payee = parsePayeeInfo(invoice.payee_info);
-      const receiptRows: ReceiptRow[] = invoice.pay_invoice_details.map((detail) => ({
-        academicYear: detail.academic_year || "-",
-        feeHead: detail.fee_head || "-",
-        feeSubHead: detail.fee_subhead || "-",
-        feeAmount: toNumber(detail.base_payable_amount),
-        paidFine: toNumber(detail.fine_paid_amount),
-        waiver: toNumber(detail.waiver_amount),
-        previouslyPaid: toNumber(detail.previously_paid),
-        paidAmount: toNumber(detail.payment_amount),
-        dueAmount: toNumber(detail.due_amount),
-      }));
+      const receiptRows: ReceiptRow[] = invoice.pay_invoice_details.map(
+        (detail) => ({
+          academicYear: detail.academic_year || "-",
+          feeHead: detail.fee_head || "-",
+          feeSubHead: detail.fee_subhead || "-",
+          feeAmount: toNumber(detail.base_payable_amount),
+          paidFine: toNumber(detail.fine_paid_amount),
+          waiver: toNumber(detail.waiver_amount),
+          previouslyPaid: toNumber(detail.previously_paid),
+          paidAmount: toNumber(detail.payment_amount),
+          dueAmount: toNumber(detail.due_amount),
+        }),
+      );
 
       const classShiftSection =
         payee["class-shift-section"] ||
@@ -411,7 +414,11 @@ const Invoices = () => {
         ].join(" / ");
 
       const totalAmount = toNumber(invoice.pay_amount);
-      const academicYear = firstDetail?.academic_year || payee.academic_year || userData.academic_year || "-";
+      const academicYear =
+        firstDetail?.academic_year ||
+        payee.academic_year ||
+        userData.academic_year ||
+        "-";
       const academicSession =
         firstDetail?.academic_session ||
         payee.academic_session ||
@@ -428,7 +435,10 @@ const Invoices = () => {
           userData.student_id ||
           "-",
         studentName:
-          payee.name || firstDetail?.student_name || userData.student_name || "-",
+          payee.name ||
+          firstDetail?.student_name ||
+          userData.student_name ||
+          "-",
         phone: payee.contact || userData.phone || "-",
         department:
           payee.department ||
@@ -463,11 +473,10 @@ const Invoices = () => {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
-  const getReceiptHtml = useCallback(
-    (receipt: ReceiptData) => {
-      const rowsHtml = receipt.rows
-        .map(
-          (row) => `
+  const getReceiptHtml = useCallback((receipt: ReceiptData) => {
+    const rowsHtml = receipt.rows
+      .map(
+        (row) => `
             <tr>
               <td>${escapeHtml(row.academicYear)}</td>
               <td>${escapeHtml(row.feeHead)}</td>
@@ -480,10 +489,10 @@ const Invoices = () => {
               <td class="numeric">${escapeHtml(formatCurrency(row.dueAmount))}</td>
             </tr>
           `,
-        )
-        .join("");
+      )
+      .join("");
 
-      return `
+    return `
         <!DOCTYPE html>
         <html>
           <head>
@@ -683,9 +692,7 @@ const Invoices = () => {
           </body>
         </html>
       `;
-    },
-    [],
-  );
+  }, []);
 
   const downloadPdfOnWeb = async (invoice: InvoiceItem, html: string) => {
     const iframe = document.createElement("iframe");
@@ -695,7 +702,10 @@ const Invoices = () => {
     iframe.style.width = "0";
     iframe.style.height = "0";
     iframe.style.border = "0";
-    iframe.setAttribute("title", `${MONEY_RECEIPT_FILENAME_PREFIX}_${invoice.invoice}`);
+    iframe.setAttribute(
+      "title",
+      `${MONEY_RECEIPT_FILENAME_PREFIX}_${invoice.invoice}`,
+    );
 
     document.body.appendChild(iframe);
 
@@ -717,7 +727,10 @@ const Invoices = () => {
       frameWindow.focus();
       frameWindow.print();
       cleanup();
-      showToast("success", "Print dialog opened. Choose Save as PDF to download.");
+      showToast(
+        "success",
+        "Print dialog opened. Choose Save as PDF to download.",
+      );
     };
 
     const frameDocument =
@@ -868,7 +881,9 @@ const Invoices = () => {
   const TableHeader = () => (
     <View
       className="flex-row bg-slate-50 dark:bg-slate-800/80 py-3 border border-slate-200 dark:border-slate-700"
-      style={useFlexLayout ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
+      style={
+        useFlexLayout ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }
+      }
     >
       <View
         style={columnStyle(150, 2.6, {
@@ -949,7 +964,11 @@ const Invoices = () => {
     return (
       <View
         className={`flex-row py-4 border-b border-l border-r border-slate-100 dark:border-slate-800 ${isSmallScreen ? "py-3" : ""}`}
-        style={useFlexLayout ? { width: "100%" } : { minWidth: hasAnyPaid ? 650 : 550 }}
+        style={
+          useFlexLayout
+            ? { width: "100%" }
+            : { minWidth: hasAnyPaid ? 650 : 550 }
+        }
       >
         <View
           style={columnStyle(150, 2.6, {
@@ -1226,8 +1245,10 @@ const Invoices = () => {
                   Invoice: {selectedInvoice.invoice}
                 </Text>
                 <View className="flex-row items-center gap-3">
-                  {(selectedInvoice.payment_state?.toUpperCase() === "COMPLETED" ||
-                    selectedInvoice.payment_state?.toUpperCase() === "PAID") && (
+                  {(selectedInvoice.payment_state?.toUpperCase() ===
+                    "COMPLETED" ||
+                    selectedInvoice.payment_state?.toUpperCase() ===
+                      "PAID") && (
                     <TouchableOpacity
                       onPress={() => generatePDF(selectedInvoice)}
                       disabled={downloadingId === selectedInvoice.id}
@@ -1348,14 +1369,8 @@ function ReceiptPreview({
           </View>
         </View>
 
-        <HorizontalScrollView
-          horizontal
-          showsHorizontalScrollIndicator
-        >
-          <View
-            className="mt-4"
-            style={{ minWidth: isMobile ? 980 : 980 }}
-          >
+        <HorizontalScrollView horizontal showsHorizontalScrollIndicator>
+          <View className="mt-4" style={{ minWidth: isMobile ? 980 : 980 }}>
             <ReceiptTableHeader />
 
             {receipt.rows.map((row, index) => (
@@ -1366,32 +1381,79 @@ function ReceiptPreview({
                 <ReceiptCell text={row.academicYear} width={90} />
                 <ReceiptCell text={row.feeHead} width={125} />
                 <ReceiptCell text={row.feeSubHead} width={125} />
-                <ReceiptCell text={formatCurrency(row.feeAmount)} width={110} align="right" />
-                <ReceiptCell text={formatCurrency(row.paidFine)} width={85} align="right" />
-                <ReceiptCell text={formatCurrency(row.waiver)} width={80} align="right" />
+                <ReceiptCell
+                  text={formatCurrency(row.feeAmount)}
+                  width={110}
+                  align="right"
+                />
+                <ReceiptCell
+                  text={formatCurrency(row.paidFine)}
+                  width={85}
+                  align="right"
+                />
+                <ReceiptCell
+                  text={formatCurrency(row.waiver)}
+                  width={80}
+                  align="right"
+                />
                 <ReceiptCell
                   text={formatCurrency(row.previouslyPaid)}
                   width={120}
                   align="right"
                 />
-                <ReceiptCell text={formatCurrency(row.paidAmount)} width={105} align="right" />
-                <ReceiptCell text={formatCurrency(row.dueAmount)} width={105} align="right" isLast />
+                <ReceiptCell
+                  text={formatCurrency(row.paidAmount)}
+                  width={105}
+                  align="right"
+                />
+                <ReceiptCell
+                  text={formatCurrency(row.dueAmount)}
+                  width={105}
+                  align="right"
+                  isLast
+                />
               </View>
             ))}
 
             <View className="flex-row border-x border-b border-slate-800">
               <ReceiptCell text="Totals:" width={340} align="right" bold />
-              <ReceiptCell text={formatCurrency(totals.feeAmount)} width={110} align="right" bold />
-              <ReceiptCell text={formatCurrency(totals.paidFine)} width={85} align="right" bold />
-              <ReceiptCell text={formatCurrency(totals.waiver)} width={80} align="right" bold />
+              <ReceiptCell
+                text={formatCurrency(totals.feeAmount)}
+                width={110}
+                align="right"
+                bold
+              />
+              <ReceiptCell
+                text={formatCurrency(totals.paidFine)}
+                width={85}
+                align="right"
+                bold
+              />
+              <ReceiptCell
+                text={formatCurrency(totals.waiver)}
+                width={80}
+                align="right"
+                bold
+              />
               <ReceiptCell
                 text={formatCurrency(totals.previouslyPaid)}
                 width={120}
                 align="right"
                 bold
               />
-              <ReceiptCell text={formatCurrency(totals.paidAmount)} width={105} align="right" bold />
-              <ReceiptCell text={formatCurrency(totals.dueAmount)} width={105} align="right" bold isLast />
+              <ReceiptCell
+                text={formatCurrency(totals.paidAmount)}
+                width={105}
+                align="right"
+                bold
+              />
+              <ReceiptCell
+                text={formatCurrency(totals.dueAmount)}
+                width={105}
+                align="right"
+                bold
+                isLast
+              />
             </View>
 
             <View className="flex-row border-x border-b border-slate-800">

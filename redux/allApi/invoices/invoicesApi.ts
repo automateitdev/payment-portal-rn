@@ -212,9 +212,9 @@ export const paymentApi = baseApi.injectEndpoints({
     }),
 
     fetchInvoices: builder.query({
-      query: ({ academic_year_id, student_id }) => ({
+      query: ({ custom_student_id }) => ({
         url: "/payment-portal/payment-invoice-show",
-        params: { academic_year_id, student_id },
+        params: { custom_student_id },
       }),
       keepUnusedDataFor: 0,
 
