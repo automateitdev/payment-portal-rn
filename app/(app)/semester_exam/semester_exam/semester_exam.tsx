@@ -1,5 +1,6 @@
 import { CustomSelect, SelectOption } from "@/components/Selector/Selector";
 import { showMessage } from "@/components/shared/CustomToast/message";
+import { getErrorMessage } from "@/components/utils/errorHandler";
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
 import {
   useGetStudentExamListQuery,
@@ -1278,15 +1279,7 @@ export default function SemesterExamScreen() {
     })
       .unwrap()
       .catch((error: unknown) => {
-        const maybeError = error as {
-          data?: { message?: string };
-          message?: string;
-        };
-        const message =
-          maybeError?.data?.message ||
-          maybeError?.message ||
-          "Result load korte problem hocche.";
-        showMessage("error", "Result load failed", message);
+        showMessage("error", "Result load failed", getErrorMessage(error));
       });
   }, [fetchStudentResult, selectedExamId, selectedYearId]);
 
@@ -1632,8 +1625,8 @@ export default function SemesterExamScreen() {
               <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={handleDownload}
-                disabled={true}
-                // disabled={!hasResult || downloading}
+                // disabled={true}
+                disabled={!hasResult || downloading}
                 className={`h-[56px] rounded-2xl px-5 flex-row items-center justify-center ${
                   hasResult ? "bg-emerald-500" : "bg-slate-200"
                 }`}
@@ -1699,7 +1692,7 @@ export default function SemesterExamScreen() {
                 Result load failed
               </Text>
               <Text className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
-                Academic year ar exam abar select kore try korte paro.
+                {getErrorMessage(resultError)}
               </Text>
             </View>
           ) : hasResult ? (
