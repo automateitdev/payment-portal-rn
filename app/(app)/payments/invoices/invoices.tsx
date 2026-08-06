@@ -389,13 +389,13 @@ const Invoices = () => {
 
   const buildReceiptData = useCallback(
     (invoice: InvoiceItem): ReceiptData => {
-      const firstDetail = invoice.pay_invoice_details?.[0];
-      const payee = parsePayeeInfo(invoice.payee_info);
-      const receiptRows: ReceiptRow[] = invoice.pay_invoice_details.map(
+      const firstDetail = invoice?.pay_invoice_details?.[0];
+      const payee = parsePayeeInfo(invoice?.payee_info);
+      const receiptRows: ReceiptRow[] = (invoice?.pay_invoice_details ?? []).map(
         (detail) => ({
-          academicYear: detail.academic_year || "-",
-          feeHead: detail.fee_head || "-",
-          feeSubHead: detail.fee_subhead || "-",
+          academicYear: detail?.academic_year || "-",
+          feeHead: detail?.fee_head || "-",
+          feeSubHead: detail?.fee_subhead || "-",
           feeAmount: toNumber(detail.base_payable_amount),
           paidFine: toNumber(detail.fine_paid_amount),
           waiver: toNumber(detail.waiver_amount),
@@ -668,16 +668,16 @@ const Invoices = () => {
                   ${rowsHtml}
                   <tr>
                     <td colspan="3" class="totals-label">Totals:</td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.feeAmount, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.paidFine, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.waiver, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.previouslyPaid, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.paidAmount, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.rows.reduce((sum, row) => sum + row.dueAmount, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.feeAmount, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.paidFine, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.waiver, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.previouslyPaid, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.paidAmount, 0)))}</strong></td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.dueAmount, 0)))}</strong></td>
                   </tr>
                   <tr class="remarks-row">
                     <td><strong>In Word:</strong></td>
-                    <td colspan="2">${escapeHtml(receipt.amountInWords)}</td>
+                    <td colspan="2">${escapeHtml(receipt?.amountInWords)}</td>
                     <td><strong>Remarks</strong></td>
                     <td colspan="5"></td>
                   </tr>

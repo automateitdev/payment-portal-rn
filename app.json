@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "paymentportal",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "platforms": ["android", "web"],
     "updates": {
       "fallbackToCacheTimeout": 0,
@@ -25,14 +24,12 @@
       "supportsTablet": true
     },
     "android": {
-      "label": "AutoPay",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png",
         "backgroundImage": "./assets/images/icon.png",
         "monochromeImage": "./assets/images/icon.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "pay.academyims.com",
       "intentFilters": [
@@ -82,14 +79,6 @@
       },
       "eas": {
         "projectId": "e8b05647-0993-4b0c-8a4e-b9afcdc8478a"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./ServiceAccount.json",
-        "track": "production"
       }
     }
   }

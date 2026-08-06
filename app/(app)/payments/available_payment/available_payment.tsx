@@ -334,13 +334,13 @@ const AvailablePayment = () => {
 
   const isLockedRow = (feeHeadId: number, subhead: FeeSubhead) => {
     return autoSelectedSubheads[feeHeadId]?.some(
-      (item) => item.payapplies_id === subhead.payapplies_id,
+      (item) => item?.payapplies_id === subhead?.payapplies_id,
     );
   };
 
   const paymentConfirmation = () => {
     if (totalCalculatedAmount <= 0) {
-      Alert.alert("Error", "Please select at least one fee to pay");
+      showMessage("error", "Error", "Please select at least one fee to pay");
       return;
     }
     setConfirmPaymentDialog(true);
@@ -535,14 +535,14 @@ const AvailablePayment = () => {
                 {student_online_payment_setting?.toLowerCase() ===
                 "due upto current date" ? (
                   <View className="flex-row flex-wrap gap-1">
-                    {item.fee_subheads.map((subhead) => {
+                    {item?.fee_subheads?.map((subhead) => {
                       const isAutoSelected = autoSelectedSubheads[
                         item.id
                       ]?.some(
-                        (item) => item.payapplies_id === subhead.payapplies_id,
+                        (item) => item?.payapplies_id === subhead.payapplies_id,
                       );
                       const isSelected = selectedSubheads.some(
-                        (s) => s.payapplies_id === subhead.payapplies_id,
+                        (s) => s?.payapplies_id === subhead?.payapplies_id,
                       );
 
                       return (
@@ -565,9 +565,9 @@ const AvailablePayment = () => {
                   </View>
                 ) : (
                   <View className="flex-row flex-wrap gap-1">
-                    {item.fee_subheads.map((subhead) => {
+                    {item?.fee_subheads?.map((subhead) => {
                       const isSelected = selectedSubheads.some(
-                        (s) => s.payapplies_id === subhead.payapplies_id,
+                        (s) => s?.payapplies_id === subhead.payapplies_id,
                       );
 
                       return (
