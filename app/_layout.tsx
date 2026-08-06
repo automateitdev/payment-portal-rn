@@ -60,10 +60,7 @@ function ThemeWatcher({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setColorScheme(mode);
     if (Platform.OS === "android") {
-      NavigationBar.setBackgroundColorAsync(
-        mode === "dark" ? "#020617" : "#ffffff",
-      );
-      NavigationBar.setButtonStyleAsync(mode === "dark" ? "light" : "dark");
+      NavigationBar.setStyle(mode === "dark" ? "light" : "dark");
     }
   }, [mode]);
 

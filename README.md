@@ -50,4 +50,5 @@ Join our community of developers creating universal apps.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
   eas build --platform android --profile production
   npx expo install --fix
- <!-- eas update --branch production --environment production --message "fixing api env" -->
+  <!-- eas update --branch production --environment production --message "fixing api env" -->
+  eas build --platform android --profile production --auto-submit
