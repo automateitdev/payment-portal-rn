@@ -80,6 +80,9 @@ interface PaymentData {
     total_paid: number;
   };
   paymentSetting: string;
+  absent_fine?: number;
+  absent_fine_fee_head_id?: number;
+  absent_fine_fee_head_name?: string;
 }
 
 const AvailablePayment = () => {
@@ -133,6 +136,9 @@ const AvailablePayment = () => {
   const feeHeads = paymentData?.all_payments?.processed_payments || [];
   const chargeSetup = paymentData?.charge_setup;
   const chargeList = paymentData?.all_charges || [];
+  const absentFine = Number(paymentData?.absent_fine || 0);
+  const absentFineName =
+    paymentData?.absent_fine_fee_head_name || "Absent Fine";
   // const student_online_payment_setting = paymentData?.paymentSetting;
 
   const fees_payment_by_web = generalConfigs?.fees_payment_by_web;
@@ -179,7 +185,7 @@ const AvailablePayment = () => {
         });
   };
 
-  const totalCalculatedAmount = useMemo(() => {
+  const subheadTotalAmount = useMemo(() => {
     let total = 0;
     for (const feeheadId in selectedFeesubheads) {
       const subheads = selectedFeesubheads[Number(feeheadId)];
@@ -195,6 +201,11 @@ const AvailablePayment = () => {
     }
     return total;
   }, [selectedFeesubheads]);
+
+  const totalCalculatedAmount = useMemo(() => {
+    if (subheadTotalAmount <= 0) return 0;
+    return subheadTotalAmount + absentFine;
+  }, [subheadTotalAmount, absentFine]);
 
   const getPayableAmount = (
     feeHeadId: number,
@@ -366,6 +377,17 @@ const AvailablePayment = () => {
                 : Number(subhead.calculated_amount || 0);
             paymentRequestData.amount.push(amount);
           });
+        }
+      }
+
+      if (absentFine > 0) {
+        (paymentRequestData as any).attendance_fine = absentFine;
+        (paymentRequestData as any).absent_fine = absentFine;
+        if (paymentData?.absent_fine_fee_head_id) {
+          (paymentRequestData as any).absent_fine_fee_head_id =
+            paymentData.absent_fine_fee_head_id;
+          (paymentRequestData as any).attendance_fine_fee_head_id =
+            paymentData.absent_fine_fee_head_id;
         }
       }
       // Call the payment API
@@ -1059,50 +1081,108 @@ const AvailablePayment = () => {
                       </Text>
                     </View>
 
-                    <View className="p-4 border-b border-gray-100">
+                    <View className="p-4 border-b border-gray-100 dark:border-slate-800">
                       <View className="flex-row items-center justify-between">
-                        <View className="flex-row space-x-2">
+                        <View className="flex-1 mr-3">
                           {totalCalculatedAmount > 0 ? (
-                            <View className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-                              <Text className="text-blue-700 font-medium">
-                                Payment Amount: ৳{" "}
-                                {formatCurrency(totalCalculatedAmount)}
-                              </Text>
+                            <View className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl p-3">
+                              {absentFine > 0 ? (
+                                <View className="gap-1">
+                                  <View className="flex-row items-center justify-between">
+                                    <Text className="text-xs text-slate-500 dark:text-slate-400">
+                                      Total Fees:
+                                    </Text>
+                                    <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                      ৳ {formatCurrency(subheadTotalAmount)}
+                                    </Text>
+                                  </View>
+                                  <View className="flex-row items-center justify-between">
+                                    <Text className="text-xs text-orange-600 dark:text-amber-400 font-medium">
+                                      {absentFineName}:
+                                    </Text>
+                                    <Text className="text-xs font-semibold text-orange-600 dark:text-amber-400">
+                                      + ৳ {formatCurrency(absentFine)}
+                                    </Text>
+                                  </View>
+                                  <View className="border-t border-blue-200/80 dark:border-blue-800/60 pt-1 flex-row items-center justify-between mt-0.5">
+                                    <Text className="text-xs font-bold text-blue-900 dark:text-blue-200">
+                                      Payment Amount:
+                                    </Text>
+                                    <Text className="text-sm font-extrabold text-blue-700 dark:text-blue-400">
+                                      ৳ {formatCurrency(totalCalculatedAmount)}
+                                    </Text>
+                                  </View>
+                                </View>
+                              ) : (
+                                <Text className="text-blue-700 dark:text-blue-400 font-medium">
+                                  Payment Amount: ৳{" "}
+                                  {formatCurrency(totalCalculatedAmount)}
+                                </Text>
+                              )}
                             </View>
                           ) : (
-                            <View className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1.5">
-                              <Text className="text-yellow-700 font-medium">
+                            <View className="bg-yellow-50 dark:bg-amber-950/30 border border-yellow-200 dark:border-amber-800/60 rounded-xl px-3 py-2">
+                              <Text className="text-yellow-700 dark:text-amber-400 font-medium text-xs">
                                 Select payment to pay
                               </Text>
                             </View>
                           )}
-                          <TouchableOpacity
-                            onPress={paymentConfirmation}
-                            disabled={totalCalculatedAmount <= 0}
-                            className={`flex-row items-center px-4 py-2 rounded-lg ${totalCalculatedAmount > 0 ? "bg-blue-600" : "bg-gray-300"}`}
-                          >
-                            <Feather
-                              name="credit-card"
-                              size={18}
-                              color="white"
-                            />
-                            <Text className="text-white font-medium ml-2">
-                              Pay Now
-                            </Text>
-                          </TouchableOpacity>
                         </View>
+
+                        <TouchableOpacity
+                          onPress={paymentConfirmation}
+                          disabled={totalCalculatedAmount <= 0}
+                          className={`flex-row items-center px-4 py-2.5 rounded-xl ${totalCalculatedAmount > 0 ? "bg-blue-600" : "bg-gray-300 dark:bg-slate-700"}`}
+                        >
+                          <Feather
+                            name="credit-card"
+                            size={18}
+                            color="white"
+                          />
+                          <Text className="text-white font-medium ml-2">
+                            Pay Now
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
 
                     <View className="p-4">
                       {feeHeads.length > 0 ? (
-                        <FlatList
-                          data={feeHeads}
-                          keyExtractor={(item) => item.id.toString()}
-                          renderItem={renderFeeHeadItem}
-                          showsVerticalScrollIndicator={false}
-                          contentContainerStyle={{ paddingBottom: 20 }}
-                        />
+                        <>
+                          <FlatList
+                            data={feeHeads}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={renderFeeHeadItem}
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 10 }}
+                          />
+
+                          {/* Absent Fine Box at the bottom of Payable List */}
+                          {absentFine > 0 && (
+                            <View className="mt-3 p-4 bg-orange-50/90 dark:bg-amber-950/40 rounded-xl border border-orange-200/80 dark:border-amber-800/60 flex-row items-center justify-between shadow-sm">
+                              <View className="flex-row items-center gap-3">
+                                <View className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-amber-900/60 items-center justify-center border border-orange-200 dark:border-amber-700/50">
+                                  <MaterialIcons
+                                    name="event-busy"
+                                    size={22}
+                                    color="#ea580c"
+                                  />
+                                </View>
+                                <View>
+                                  <Text className="text-sm font-bold text-orange-950 dark:text-amber-200">
+                                    {absentFineName}
+                                  </Text>
+                                  <Text className="text-xs text-orange-600/90 dark:text-amber-400/90 font-medium mt-0.5">
+                                    Calculated with payment
+                                  </Text>
+                                </View>
+                              </View>
+                              <Text className="text-base font-extrabold text-orange-700 dark:text-amber-400">
+                                ৳ {formatCurrency(absentFine)}
+                              </Text>
+                            </View>
+                          )}
+                        </>
                       ) : (
                         <View className="py-10 items-center">
                           <MaterialIcons
@@ -1158,10 +1238,39 @@ const AvailablePayment = () => {
                   Payment Confirmation
                 </Text>
 
-                <View className="mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                  <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    Payment of: ৳ {formatCurrency(totalCalculatedAmount)}
-                  </Text>
+                <View className="mb-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800/50">
+                  {absentFine > 0 ? (
+                    <View className="gap-1.5">
+                      <View className="flex-row justify-between items-center">
+                        <Text className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                          Total Fees:
+                        </Text>
+                        <Text className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          ৳ {formatCurrency(subheadTotalAmount)}
+                        </Text>
+                      </View>
+                      <View className="flex-row justify-between items-center">
+                        <Text className="text-xs text-orange-600 dark:text-amber-400 font-medium">
+                          {absentFineName}:
+                        </Text>
+                        <Text className="text-sm font-semibold text-orange-600 dark:text-amber-400">
+                          + ৳ {formatCurrency(absentFine)}
+                        </Text>
+                      </View>
+                      <View className="border-t border-blue-200 dark:border-blue-800/60 pt-2 flex-row justify-between items-center mt-1">
+                        <Text className="text-base font-bold text-blue-900 dark:text-blue-200">
+                          Payment Amount:
+                        </Text>
+                        <Text className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
+                          ৳ {formatCurrency(totalCalculatedAmount)}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      Payment of: ৳ {formatCurrency(totalCalculatedAmount)}
+                    </Text>
+                  )}
                 </View>
 
                 {chargeSetup && chargeList.length > 0 && (

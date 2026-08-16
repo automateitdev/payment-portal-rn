@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ColorValue,
   View,
   Text,
   Platform,
@@ -29,7 +30,7 @@ const TabIcon = ({
 }: {
   name: any;
   focused: boolean;
-  color: string;
+  color: ColorValue;
   size: number;
 }) => {
   const scale = useSharedValue(1);
