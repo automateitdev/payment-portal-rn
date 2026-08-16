@@ -1,6 +1,8 @@
 import {
   NotificationItem,
+  useClearAllNotificationsMutation,
   useFetchNotificationsQuery,
+  useMarkAllNotificationsReadMutation,
   useMarkNotificationReadMutation,
 } from "@/redux/allApi/notifications/notificationsApi";
 import { logout } from "@/redux/feature/authSlice";
@@ -41,6 +43,10 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
   const notifications = notificationsData?.list || [];
   const unreadCount = notificationsData?.unreadCount || 0;
   const [markNotificationRead] = useMarkNotificationReadMutation();
+  const [markAllNotificationsRead, { isLoading: isMarkingAllRead }] =
+    useMarkAllNotificationsReadMutation();
+  const [clearAllNotifications, { isLoading: isClearingAll }] =
+    useClearAllNotificationsMutation();
 
   const handleLogout = async () => {
     dispatch(logout());
@@ -50,6 +56,30 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
   const handleNotificationPress = (item: NotificationItem) => {
     if (!item.read_at) {
       markNotificationRead(item.id);
+    }
+  };
+
+  const handleMarkAllRead = () => {
+    markAllNotificationsRead();
+  };
+
+  const handleClearAll = () => {
+    clearAllNotifications();
+  };
+
+  const getNotificationIcon = (
+    severity?: NotificationItem["data"]["severity"],
+  ): { name: keyof typeof Ionicons.glyphMap; color: string } => {
+    switch (severity) {
+      case "error":
+        return { name: "close-circle", color: "#ef4444" };
+      case "warning":
+        return { name: "alert-circle", color: "#f59e0b" };
+      case "info":
+        return { name: "information-circle", color: "#3b82f6" };
+      case "success":
+      default:
+        return { name: "checkmark-circle", color: "#16A34A" };
     }
   };
 
@@ -112,20 +142,48 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
             onPress={() => setNotifOpen(false)}
             activeOpacity={1}
           >
-            <View className="absolute right-4 top-14 bg-white dark:bg-slate-900 rounded-lg shadow-lg w-80 max-h-96 overflow-hidden border border-gray-100 dark:border-slate-800">
-              <View className="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
-                <Text className="font-bold text-slate-900 dark:text-white">
+            <View
+              className="absolute right-4 top-14 bg-white dark:bg-slate-900 rounded-2xl w-80 max-h-[420px] overflow-hidden border border-slate-100 dark:border-slate-800"
+              style={{
+                shadowColor: "#0f172a",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.15,
+                shadowRadius: 24,
+                elevation: 12,
+              }}
+            >
+              <View className="flex-row items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                <Text className="font-bold text-[13px] text-slate-900 dark:text-white">
                   Notifications
                 </Text>
+                {unreadCount > 0 && (
+                  <TouchableOpacity
+                    onPress={handleMarkAllRead}
+                    disabled={isMarkingAllRead}
+                  >
+                    {isMarkingAllRead ? (
+                      <ActivityIndicator size="small" color="#16A34A" />
+                    ) : (
+                      <Text className="text-[10.5px] font-semibold text-green-600 dark:text-emerald-400">
+                        Mark all as read
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
 
               {isNotificationsLoading && notifications.length === 0 ? (
-                <View className="py-8 items-center">
-                  <ActivityIndicator color="#10b981" />
+                <View className="py-10 items-center">
+                  <ActivityIndicator color="#16A34A" />
                 </View>
               ) : notifications.length === 0 ? (
-                <View className="py-8 items-center">
-                  <Text className="text-gray-400 dark:text-slate-500 text-sm">
+                <View className="py-10 items-center">
+                  <Ionicons
+                    name="notifications-off-outline"
+                    size={24}
+                    color={isDark ? "#475569" : "#cbd5e1"}
+                  />
+                  <Text className="text-gray-400 dark:text-slate-500 text-[11px] mt-2">
                     No notifications
                   </Text>
                 </View>
@@ -133,22 +191,69 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
                 <FlatList
                   data={notifications}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => handleNotificationPress(item)}
-                      className={`px-4 py-3 border-b border-gray-50 dark:border-slate-800 ${
-                        !item.read_at ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
-                      }`}
-                    >
-                      <Text className="text-sm text-slate-700 dark:text-slate-200">
-                        {item.data?.message || "New notification"}
-                      </Text>
-                      <Text className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                        {formatNotificationTime(item.created_at)}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  style={{ maxHeight: 260 }}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                  contentContainerStyle={{ padding: 6, gap: 2 }}
+                  renderItem={({ item }) => {
+                    const isUnread = !item.read_at;
+                    const iconInfo = getNotificationIcon(item.data?.severity);
+                    return (
+                      <TouchableOpacity
+                        onPress={() => handleNotificationPress(item)}
+                        className={`flex-row items-start gap-2.5 px-2.5 py-2 rounded-xl ${
+                          isUnread
+                            ? "bg-emerald-50 dark:bg-emerald-500/10"
+                            : ""
+                        }`}
+                      >
+                        <View
+                          className="w-7 h-7 rounded-full items-center justify-center mt-0.5"
+                          style={{ backgroundColor: `${iconInfo.color}1A` }}
+                        >
+                          <Ionicons
+                            name={iconInfo.name}
+                            size={15}
+                            color={iconInfo.color}
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className={`text-[10.5px] leading-[14px] ${
+                              isUnread
+                                ? "text-slate-800 dark:text-slate-100 font-medium"
+                                : "text-slate-500 dark:text-slate-400"
+                            }`}
+                          >
+                            {item.data?.message || "New notification"}
+                          </Text>
+                          <Text className="text-[9px] text-gray-400 dark:text-slate-500 mt-0.5">
+                            {formatNotificationTime(item.created_at)}
+                          </Text>
+                        </View>
+                        {isUnread && (
+                          <View className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-emerald-400 mt-1.5" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  }}
                 />
+              )}
+
+              {notifications.length > 0 && (
+                <TouchableOpacity
+                  onPress={handleClearAll}
+                  disabled={isClearingAll}
+                  className="py-2.5 items-center border-t border-slate-100 dark:border-slate-800"
+                >
+                  {isClearingAll ? (
+                    <ActivityIndicator size="small" color="#16A34A" />
+                  ) : (
+                    <Text className="text-[10.5px] font-semibold text-green-600 dark:text-emerald-400">
+                      Clear all notifications
+                    </Text>
+                  )}
+                </TouchableOpacity>
               )}
             </View>
           </TouchableOpacity>

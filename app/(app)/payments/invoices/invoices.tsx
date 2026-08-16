@@ -5,6 +5,7 @@ import { RootState } from "@/redux/store";
 import { showToast } from "@/utils/toast";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Print from "expo-print";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -65,6 +66,7 @@ type InvoiceDetail = {
   student_religion: string;
   student_type: string;
   residential_type: string;
+  student_absent_fine_history_id?: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -145,6 +147,7 @@ type ReceiptData = {
   totalAmount: number;
   amountInWords: string;
   rows: ReceiptRow[];
+  absentFine: number;
 };
 
 const MONEY_RECEIPT_FILENAME_PREFIX = "Money_Receipt";
@@ -391,19 +394,19 @@ const Invoices = () => {
     (invoice: InvoiceItem): ReceiptData => {
       const firstDetail = invoice?.pay_invoice_details?.[0];
       const payee = parsePayeeInfo(invoice?.payee_info);
-      const receiptRows: ReceiptRow[] = (invoice?.pay_invoice_details ?? []).map(
-        (detail) => ({
-          academicYear: detail?.academic_year || "-",
-          feeHead: detail?.fee_head || "-",
-          feeSubHead: detail?.fee_subhead || "-",
-          feeAmount: toNumber(detail.base_payable_amount),
-          paidFine: toNumber(detail.fine_paid_amount),
-          waiver: toNumber(detail.waiver_amount),
-          previouslyPaid: toNumber(detail.previously_paid),
-          paidAmount: toNumber(detail.payment_amount),
-          dueAmount: toNumber(detail.due_amount),
-        }),
-      );
+      const receiptRows: ReceiptRow[] = (
+        invoice?.pay_invoice_details ?? []
+      ).map((detail) => ({
+        academicYear: detail?.academic_year || "-",
+        feeHead: detail?.fee_head || "-",
+        feeSubHead: detail?.fee_subhead || "-",
+        feeAmount: toNumber(detail.base_payable_amount),
+        paidFine: toNumber(detail.fine_paid_amount),
+        waiver: toNumber(detail.waiver_amount),
+        previouslyPaid: toNumber(detail.previously_paid),
+        paidAmount: toNumber(detail.payment_amount),
+        dueAmount: toNumber(detail.due_amount),
+      }));
 
       const classShiftSection =
         payee["class-shift-section"] ||
@@ -414,6 +417,17 @@ const Invoices = () => {
         ].join(" / ");
 
       const totalAmount = toNumber(invoice.pay_amount);
+      const hasAbsentFine = (invoice?.pay_invoice_details ?? []).some(
+        (detail) => !!detail.student_absent_fine_history_id,
+      );
+      const paidFromRows = receiptRows.reduce(
+        (sum, row) => sum + row.paidAmount,
+        0,
+      );
+      const absentFine =
+        hasAbsentFine && totalAmount > paidFromRows
+          ? totalAmount - paidFromRows
+          : 0;
       const academicYear =
         firstDetail?.academic_year ||
         payee.academic_year ||
@@ -460,6 +474,7 @@ const Invoices = () => {
         totalAmount,
         amountInWords: getAmountInWords(totalAmount),
         rows: receiptRows,
+        absentFine,
       };
     },
     [userData],
@@ -675,6 +690,22 @@ const Invoices = () => {
                     <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.paidAmount, 0)))}</strong></td>
                     <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.dueAmount, 0)))}</strong></td>
                   </tr>
+                  ${
+                    receipt.absentFine > 0
+                      ? `
+                  <tr>
+                    <td colspan="7" class="totals-label">Absent Fine</td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.absentFine))}</strong></td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td colspan="7" class="totals-label">Grand Total</td>
+                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.totalAmount))}</strong></td>
+                    <td></td>
+                  </tr>
+                  `
+                      : ""
+                  }
                   <tr class="remarks-row">
                     <td><strong>In Word:</strong></td>
                     <td colspan="2">${escapeHtml(receipt?.amountInWords)}</td>
@@ -1455,6 +1486,41 @@ function ReceiptPreview({
                 isLast
               />
             </View>
+
+            {receipt.absentFine > 0 && (
+              <>
+                <View className="flex-row border-x border-b border-slate-800">
+                  <ReceiptCell
+                    text="Absent Fine"
+                    width={735}
+                    align="right"
+                    bold
+                  />
+                  <ReceiptCell
+                    text={formatCurrency(receipt.absentFine)}
+                    width={105}
+                    align="right"
+                    bold
+                  />
+                  <ReceiptCell text="" width={105} isLast />
+                </View>
+                <View className="flex-row border-x border-b border-slate-800">
+                  <ReceiptCell
+                    text="Grand Total"
+                    width={735}
+                    align="right"
+                    bold
+                  />
+                  <ReceiptCell
+                    text={formatCurrency(receipt.totalAmount)}
+                    width={105}
+                    align="right"
+                    bold
+                  />
+                  <ReceiptCell text="" width={105} isLast />
+                </View>
+              </>
+            )}
 
             <View className="flex-row border-x border-b border-slate-800">
               <ReceiptCell text="In Word:" width={90} bold />

@@ -5,6 +5,7 @@ import { baseApi } from "@/redux/baseApi/baseApi";
 import { setUser } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -31,6 +32,9 @@ type LoginForm = {
 
 const { width: windowWidth } = Dimensions.get("window");
 
+const HERO_COLORS = ["#062E1F", "#0B4A32", "#14532D"] as const;
+const ACCENT_COLORS = ["#4ADE80", "#16A34A"] as const;
+
 const LoginScreen = () => {
   const [screenWidth, setScreenWidth] = useState(windowWidth);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -44,7 +48,7 @@ const LoginScreen = () => {
 
   const isWeb = Platform.OS === "web";
   const isLargeScreen = isWeb && screenWidth > 900;
-  const videoWidth = isLargeScreen ? 320 : screenWidth - 64;
+  const videoWidth = isLargeScreen ? 300 : screenWidth - 72;
   const videoHeight = videoWidth * (9 / 16);
 
   const {
@@ -58,6 +62,7 @@ const LoginScreen = () => {
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const dispatch = useAppDispatch();
   const [isPlaying, setIsPlaying] = useState(false);
+
   const socials = [
     {
       icon: "logo-linkedin",
@@ -98,9 +103,13 @@ const LoginScreen = () => {
     Linking.openURL(url).catch(() => console.log("Error opening link"));
   };
 
-  const renderForm = () => (
-    <View style={styles.card}>
-      <Text style={styles.label}>Institute Credentials</Text>
+  const renderForm = (variant: "light" | "dark" = "light") => (
+    <View>
+      <Text
+        style={[styles.formLabel, variant === "dark" && styles.formLabelOnDark]}
+      >
+        Sign in with your institute credentials
+      </Text>
 
       <Controller
         control={control}
@@ -109,34 +118,49 @@ const LoginScreen = () => {
         render={({ field: { onChange, onBlur, value } }) => (
           <View
             style={[
-              styles.inputContainer,
-              focusedInput === "institute_id" && styles.inputFocused,
-              errors.institute_id && styles.inputError,
+              styles.inputPill,
+              focusedInput === "institute_id" && styles.inputPillFocused,
+              errors.institute_id && styles.inputPillError,
             ]}
           >
-            <Ionicons
-              name="business-outline"
-              size={20}
-              color={focusedInput === "institute_id" ? "#16A34A" : "#9CA3AF"}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              placeholder="Institute ID / EIIN"
-              placeholderTextColor="#9CA3AF"
-              value={value}
-              onFocus={() => setFocusedInput("institute_id")}
-              onBlur={() => {
-                onBlur();
-                setFocusedInput(null);
-              }}
-              onChangeText={onChange}
-              style={[styles.input, isWeb && ({ outlineStyle: "none" } as any)]}
-            />
+            <View
+              style={[
+                styles.inputIconWrap,
+                focusedInput === "institute_id" && styles.inputIconWrapActive,
+              ]}
+            >
+              <Ionicons
+                name="business"
+                size={15}
+                color={focusedInput === "institute_id" ? "#FFFFFF" : "#16A34A"}
+              />
+            </View>
+            <View style={styles.inputTextWrap}>
+              <Text style={styles.inputCaption}>Institute ID / EIIN</Text>
+              <TextInput
+                placeholder="e.g. 123456"
+                placeholderTextColor="#9CA3AF"
+                value={value}
+                onFocus={() => setFocusedInput("institute_id")}
+                onBlur={() => {
+                  onBlur();
+                  setFocusedInput(null);
+                }}
+                onChangeText={onChange}
+                style={[
+                  styles.inputField,
+                  isWeb && ({ outlineStyle: "none" } as any),
+                ]}
+              />
+            </View>
           </View>
         )}
       />
       {errors.institute_id && (
-        <Text style={styles.errorText}>{errors.institute_id.message}</Text>
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle" size={12} color="#F87171" />
+          <Text style={styles.errorText}>{errors.institute_id.message}</Text>
+        </View>
       )}
 
       <Controller
@@ -146,64 +170,111 @@ const LoginScreen = () => {
         render={({ field: { onChange, onBlur, value } }) => (
           <View
             style={[
-              styles.inputContainer,
-              focusedInput === "custom_student_id" && styles.inputFocused,
-              errors.custom_student_id && styles.inputError,
+              styles.inputPill,
+              focusedInput === "custom_student_id" && styles.inputPillFocused,
+              errors.custom_student_id && styles.inputPillError,
             ]}
           >
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color={
-                focusedInput === "custom_student_id" ? "#16A34A" : "#9CA3AF"
-              }
-              style={styles.inputIcon}
-            />
-            <TextInput
-              placeholder="Student ID"
-              placeholderTextColor="#9CA3AF"
-              value={value}
-              onFocus={() => setFocusedInput("custom_student_id")}
-              onBlur={() => {
-                onBlur();
-                setFocusedInput(null);
-              }}
-              onChangeText={onChange}
-              style={[styles.input, isWeb && ({ outlineStyle: "none" } as any)]}
-            />
+            <View
+              style={[
+                styles.inputIconWrap,
+                focusedInput === "custom_student_id" &&
+                  styles.inputIconWrapActive,
+              ]}
+            >
+              <Ionicons
+                name="person"
+                size={15}
+                color={
+                  focusedInput === "custom_student_id" ? "#FFFFFF" : "#16A34A"
+                }
+              />
+            </View>
+            <View style={styles.inputTextWrap}>
+              <Text style={styles.inputCaption}>Student ID</Text>
+              <TextInput
+                placeholder="e.g. 20231234"
+                placeholderTextColor="#9CA3AF"
+                value={value}
+                onFocus={() => setFocusedInput("custom_student_id")}
+                onBlur={() => {
+                  onBlur();
+                  setFocusedInput(null);
+                }}
+                onChangeText={onChange}
+                style={[
+                  styles.inputField,
+                  isWeb && ({ outlineStyle: "none" } as any),
+                ]}
+              />
+            </View>
           </View>
         )}
       />
       {errors.custom_student_id && (
-        <Text style={styles.errorText}>{errors.custom_student_id.message}</Text>
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle" size={12} color="#F87171" />
+          <Text style={styles.errorText}>
+            {errors.custom_student_id.message}
+          </Text>
+        </View>
       )}
 
-      <View className="my-3 self-start">
-        <TouchableOpacity
-          activeOpacity={0.9}
-          className={`flex-row items-center ${isLoading ? "bg-indigo-400" : "bg-indigo-600"} h-9 rounded-full px-4`}
-          onPress={handleSubmit(onSubmit)}
-          disabled={isLoading}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={handleSubmit(onSubmit)}
+        disabled={isLoading}
+        style={styles.ctaShadowWrap}
+      >
+        <LinearGradient
+          colors={isLoading ? ["#86EFAC", "#4ADE80"] : ACCENT_COLORS}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.ctaButton}
         >
-          <Text className="text-white font-bold text-sm mr-2">Continue</Text>
           {isLoading ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Ionicons name="arrow-forward" size={16} color="white" />
+            <>
+              <Text style={styles.ctaButtonText}>Continue</Text>
+              <View style={styles.ctaArrowCircle}>
+                <Ionicons name="arrow-forward" size={14} color="#16A34A" />
+              </View>
+            </>
           )}
-        </TouchableOpacity>
-      </View>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 
-  const renderVideo = () => (
-    <View style={styles.videoCard}>
-      <View style={styles.videoHeader}>
-        <Ionicons name="play-circle" size={18} color="#16A34A" />
-        <Text style={styles.videoTitle}>Need help?</Text>
+  const renderVideo = (variant: "light" | "dark" = "light") => (
+    <View
+      style={[styles.videoCard, variant === "dark" && styles.videoCardOnDark]}
+    >
+      <View style={styles.videoCardHeader}>
+        <View style={styles.videoPlayBadge}>
+          <Ionicons name="play" size={11} color="white" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={[
+              styles.videoCardTitle,
+              variant === "dark" && styles.videoCardTitleOnDark,
+            ]}
+          >
+            New here? Watch this
+          </Text>
+          <Text
+            style={[
+              styles.videoCardSub,
+              variant === "dark" && styles.videoCardSubOnDark,
+            ]}
+          >
+            A quick walkthrough of the payment process
+          </Text>
+        </View>
       </View>
-      <Text style={styles.videoSub}>Watch our guide on how to pay.</Text>
-      <View style={styles.videoWrapper}>
+      <View style={styles.videoFrame}>
         <YoutubeIframe
           height={videoHeight}
           width={videoWidth}
@@ -214,56 +285,107 @@ const LoginScreen = () => {
     </View>
   );
 
+  const renderSocials = (variant: "light" | "dark" = "light") => (
+    <View style={styles.socialsBlock}>
+      <View style={styles.socialsDividerRow}>
+        <View
+          style={[
+            styles.socialsDivider,
+            variant === "dark" && styles.socialsDividerOnDark,
+          ]}
+        />
+        <Text
+          style={[
+            styles.socialsLabel,
+            variant === "dark" && styles.socialsLabelOnDark,
+          ]}
+        >
+          Need assistance? Reach us
+        </Text>
+        <View
+          style={[
+            styles.socialsDivider,
+            variant === "dark" && styles.socialsDividerOnDark,
+          ]}
+        />
+      </View>
+      <View style={styles.socialsRow}>
+        {socials.map((s) => (
+          <TouchableOpacity
+            key={s.icon}
+            onPress={() => openLink(s.url)}
+            activeOpacity={0.75}
+            style={[
+              styles.socialPill,
+              variant === "dark" && styles.socialPillOnDark,
+            ]}
+          >
+            <Ionicons
+              name={s.icon as any}
+              size={16}
+              color={variant === "dark" ? "#BBF7D0" : "#16A34A"}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  // ---------------------------------------------------------------------
+  // Web / large-screen layout: dark branding rail + light form panel
+  // ---------------------------------------------------------------------
   if (isLargeScreen) {
     return (
-      <View style={styles.webMainContainer}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.webContentWrapper}>
-          {/* Left Side: Welcome & Video */}
-          <View style={styles.webLeftSide}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={32} color="#16A34A" />
-            </View>
-            <Text style={styles.welcomeText}>Welcome back</Text>
-            <Text style={styles.webTitle}>Payment Portal</Text>
-            <Text style={styles.webSubtitle}>
-              Manage your academic fees and payments with ease.
-            </Text>
-            {renderVideo()}
-          </View>
+      <View style={styles.webPage}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.webCard}>
+          <LinearGradient
+            colors={HERO_COLORS}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.webBrandRail}
+          >
+            <View style={styles.heroGlowTopRight} pointerEvents="none" />
+            <View style={styles.heroGlowBottomLeft} pointerEvents="none" />
 
-          {/* Right Side: Login Form */}
-          <View style={styles.webRightSide}>
-            {renderForm()}
-            <View style={styles.footer}>
-              <Text style={styles.footerLabel}>Connect with us</Text>
-              <View style={styles.socialRow}>
-                {[
-                  {
-                    name: "logo-facebook",
-                    color: "#1877F2",
-                    url: "https://facebook.com/automateitbd",
-                  },
-                  {
-                    name: "logo-linkedin",
-                    color: "#0077b5",
-                    url: "https://linkedin.com/company/automateitbd",
-                  },
-                  { name: "call", color: "#16A34A", url: "tel:+8809613241234" },
-                ].map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.socialCircle}
-                    onPress={() => openLink(item.url)}
-                  >
-                    <Ionicons
-                      name={item.name as any}
-                      size={20}
-                      color={item.color}
-                    />
-                  </TouchableOpacity>
-                ))}
+            <View style={styles.webBrandTop}>
+              <View style={styles.webLogoBadge}>
+                <Ionicons name="wallet" size={22} color="#052E1F" />
               </View>
+              <Text style={styles.webBrandName}>ACADEMY PORTAL</Text>
+            </View>
+
+            <View style={{ marginTop: 34 }}>
+              <Text style={styles.webHeroEyebrow}>Student Payments</Text>
+              <Text style={styles.webHeroTitle}>
+                Fee payments,{"\n"}made effortless.
+              </Text>
+              <Text style={styles.webHeroSubtitle}>
+                Track dues, pay instantly, and keep every receipt in one secure
+                place.
+              </Text>
+            </View>
+
+            <View style={styles.webHeroStats}>
+              <View style={styles.webHeroStatPill}>
+                <Ionicons name="shield-checkmark" size={14} color="#4ADE80" />
+                <Text style={styles.webHeroStatText}>Secure gateway</Text>
+              </View>
+              <View style={styles.webHeroStatPill}>
+                <Ionicons name="flash" size={14} color="#4ADE80" />
+                <Text style={styles.webHeroStatText}>Instant confirmation</Text>
+              </View>
+            </View>
+
+            {renderVideo("dark")}
+          </LinearGradient>
+
+          <View style={styles.webFormPanel}>
+            <View style={styles.webFormInner}>
+              <Text style={styles.webFormEyebrow}>Welcome back</Text>
+              <Text style={styles.webFormTitle}>Log in to continue</Text>
+              <View style={{ marginTop: 28 }}>{renderForm("light")}</View>
+              {renderSocials("light")}
             </View>
           </View>
         </View>
@@ -271,232 +393,440 @@ const LoginScreen = () => {
     );
   }
 
+  // ---------------------------------------------------------------------
+  // Mobile layout: gradient hero + overlapping sheet
+  // ---------------------------------------------------------------------
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.mobilePage}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={HERO_COLORS}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.mobileHero}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
+        <View style={styles.heroGlowTopRight} pointerEvents="none" />
+        <View style={styles.heroGlowBottomLeft} pointerEvents="none" />
+        <SafeAreaView edges={["top"]}>
+          <View style={styles.mobileHeroLogoRing}>
+            <View style={styles.mobileHeroLogo}>
+              <Ionicons name="wallet" size={24} color="#052E1F" />
+            </View>
+          </View>
+          <Text style={styles.mobileHeroEyebrow}>ACADEMY PAYMENT PORTAL</Text>
+          <Text style={styles.mobileHeroTitle}>Welcome back</Text>
+          <Text style={styles.mobileHeroSubtitle}>
+            Log in to manage your academic fees and payments.
+          </Text>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <View style={styles.mobileSheet}>
+        <ScrollView
+          contentContainerStyle={styles.mobileScrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="wallet" size={40} color="#16A34A" />
-            </View>
-            <Text style={styles.welcomeText}>Welcome back</Text>
-            <Text style={styles.title}>Payment Portal</Text>
-            <Text style={styles.subtitle}>
-              Log in to manage your academic fees and payments.
-            </Text>
-          </View>
-
-          {renderForm()}
-          {renderVideo()}
-
-          <View className="items-center mt-2">
-            {/* Social Row */}
-            <View
-              className="flex-row items-center justify-center mt-3"
-              style={{ gap: 8 }}
-            >
-              {socials.map((s) => (
-                <TouchableOpacity
-                  key={s.icon}
-                  onPress={() => Linking.openURL(s.url)}
-                  className="w-9 h-9 rounded-full bg-indigo-600 items-center justify-center"
-                >
-                  <Ionicons name={s.icon as any} size={16} color="white" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </ScrollView>
-    </SafeAreaView>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <View style={styles.sheetHandle} />
+            {renderForm("light")}
+            <View style={{ marginTop: 24 }}>{renderVideo("light")}</View>
+            {renderSocials("light")}
+          </KeyboardAvoidingView>
+        </ScrollView>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FDFDFD" },
-  webMainContainer: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  webContentWrapper: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    borderRadius: 24,
-    maxWidth: 750,
-    width: "100%",
-    minHeight: 480,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.1,
-    shadowRadius: 30,
-    elevation: 10,
+  // ---- shared / mobile ----
+  mobilePage: { flex: 1, backgroundColor: "#062E1F" },
+  mobileHero: {
+    paddingHorizontal: 24,
+    paddingBottom: 56,
+    position: "relative",
     overflow: "hidden",
   },
-  webLeftSide: {
-    flex: 1.1,
-    padding: 30,
-    backgroundColor: "#F0FDF4",
-    justifyContent: "center",
+  heroGlowTopRight: {
+    position: "absolute",
+    top: -60,
+    right: -60,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(74, 222, 128, 0.16)",
   },
-  webRightSide: {
-    flex: 1,
-    padding: 30,
-    justifyContent: "center",
-    borderLeftWidth: 1,
-    borderLeftColor: "#F1F5F9",
+  heroGlowBottomLeft: {
+    position: "absolute",
+    bottom: -80,
+    left: -70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
-  webTitle: { fontSize: 26, fontWeight: "900", color: "#111827", marginTop: 2 },
-  webSubtitle: {
-    fontSize: 13,
-    color: "#4B5563",
-    marginTop: 6,
-    lineHeight: 18,
-    marginBottom: 20,
-  },
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
-  header: { marginTop: 40, marginBottom: 32, alignItems: "center" },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: "white",
+  mobileHeroLogoRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#DCFCE7",
+    marginTop: 18,
+    marginBottom: 20,
+  },
+  mobileHeroLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#BBF7D0",
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  welcomeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#16A34A",
+  mobileHeroEyebrow: {
+    color: "#86EFAC",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
     textTransform: "uppercase",
-    letterSpacing: 1,
   },
-  title: { fontSize: 32, fontWeight: "800", color: "#111827", marginTop: 4 },
-  subtitle: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
+  mobileHeroTitle: {
+    color: "white",
+    fontSize: 30,
+    fontWeight: "800",
     marginTop: 8,
-    lineHeight: 22,
+    letterSpacing: 0.2,
   },
-  card: {
+  mobileHeroSubtitle: {
+    color: "rgba(220, 252, 231, 0.75)",
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginTop: 8,
+    maxWidth: 300,
+  },
+  mobileSheet: {
+    flex: 1,
     backgroundColor: "white",
-    borderRadius: 24,
-    width: "100%",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  label: {
-    fontSize: 14,
+  mobileScrollContent: {
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 36,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E5E7EB",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+
+  // ---- form (shared light/dark) ----
+  formLabel: {
+    fontSize: 13,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 12,
-    marginLeft: 4,
+    color: "#6B7280",
+    marginBottom: 14,
   },
-  inputContainer: {
+  formLabelOnDark: { color: "rgba(255,255,255,0.6)" },
+
+  inputPill: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F3F4F6",
-    borderRadius: 16,
+    borderRadius: 18,
     marginBottom: 12,
-    paddingHorizontal: 16,
-    height: 60,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1.5,
     borderColor: "transparent",
   },
-  inputFocused: {
+  inputPillFocused: {
     borderColor: "#16A34A",
-    backgroundColor: "white",
+    backgroundColor: "#F0FDF4",
     ...(Platform.OS === "web"
       ? {
           shadowColor: "#16A34A",
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.1,
+          shadowOpacity: 0.12,
           shadowRadius: 10,
         }
       : {}),
   },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 16, color: "#111827", fontWeight: "500" },
-  inputError: { borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" },
-  errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    marginBottom: 12,
-    marginLeft: 12,
+  inputPillError: {
+    borderColor: "#FCA5A5",
+    backgroundColor: "#FEF2F2",
   },
-  loginButton: {
+  inputIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#DCFCE7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  inputIconWrapActive: {
     backgroundColor: "#16A34A",
-    height: 60,
-    borderRadius: 16,
+    shadowColor: "#16A34A",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  inputTextWrap: { flex: 1 },
+  inputCaption: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  inputField: {
+    fontSize: 15.5,
+    color: "#111827",
+    fontWeight: "600",
+    padding: 0,
+  },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 10,
+    marginLeft: 6,
+    marginTop: -4,
+  },
+  errorText: { color: "#EF4444", fontSize: 11.5 },
+
+  ctaShadowWrap: {
+    marginTop: 10,
+    borderRadius: 18,
+    shadowColor: "#16A34A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  ctaButton: {
+    height: 54,
+    borderRadius: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 12,
-    shadowColor: "#16A34A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    gap: 10,
   },
-  loginButtonDisabled: { opacity: 0.7, shadowOpacity: 0 },
-  loginButtonText: { color: "white", fontWeight: "700", fontSize: 18 },
-  videoCard: {
-    marginTop: 40,
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
-  videoHeader: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-  videoTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginLeft: 8,
-  },
-  videoSub: { fontSize: 13, color: "#6B7280", marginBottom: 16 },
-  videoWrapper: {
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#000",
-  },
-  footer: { marginTop: 40, alignItems: "center" },
-  footerLabel: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginBottom: 16,
-    fontWeight: "600",
-  },
-  socialRow: { flexDirection: "row", gap: 16 },
-  socialCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  ctaButtonText: { color: "white", fontWeight: "700", fontSize: 15.5 },
+  ctaArrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+
+  // ---- video card ----
+  videoCard: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+    elevation: 1,
+  },
+  videoCardOnDark: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+    marginTop: 28,
+  },
+  videoCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  videoPlayBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    backgroundColor: "#16A34A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  videoCardTitle: { fontSize: 13.5, fontWeight: "700", color: "#111827" },
+  videoCardTitleOnDark: { color: "white" },
+  videoCardSub: { fontSize: 11.5, color: "#6B7280", marginTop: 1 },
+  videoCardSubOnDark: { color: "rgba(255,255,255,0.55)" },
+  videoFrame: {
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+
+  // ---- socials ----
+  socialsBlock: { marginTop: 28, alignItems: "center" },
+  socialsDividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    marginBottom: 16,
+  },
+  socialsDivider: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
+  socialsDividerOnDark: { backgroundColor: "rgba(255,255,255,0.12)" },
+  socialsLabel: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  socialsLabelOnDark: { color: "rgba(255,255,255,0.5)" },
+  socialsRow: { flexDirection: "row", gap: 10 },
+  socialPill: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0FDF4",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DCFCE7",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
+    elevation: 1,
+  },
+  socialPillOnDark: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+
+  // ---- web layout ----
+  webPage: {
+    flex: 1,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  webCard: {
+    flexDirection: "row",
+    width: "100%",
+    maxWidth: 940,
+    minHeight: 560,
+    borderRadius: 28,
+    overflow: "hidden",
+    backgroundColor: "white",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.14,
+    shadowRadius: 40,
+    elevation: 14,
+  },
+  webBrandRail: {
+    flex: 1,
+    padding: 40,
+    position: "relative",
+    overflow: "hidden",
+  },
+  webBrandTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+  webLogoBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: "#BBF7D0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  webBrandName: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  webHeroEyebrow: {
+    color: "#4ADE80",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  webHeroTitle: {
+    color: "white",
+    fontSize: 30,
+    fontWeight: "800",
+    lineHeight: 38,
+  },
+  webHeroSubtitle: {
+    color: "rgba(220, 252, 231, 0.7)",
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginTop: 12,
+    maxWidth: 320,
+  },
+  webHeroStats: { flexDirection: "row", gap: 10, marginTop: 24, flexWrap: "wrap" },
+  webHeroStatPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  webHeroStatText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 11.5,
+    fontWeight: "600",
+  },
+  webFormPanel: {
+    flex: 1,
+    padding: 44,
+    justifyContent: "center",
+  },
+  webFormInner: { width: "100%", maxWidth: 340, alignSelf: "center" },
+  webFormEyebrow: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#16A34A",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  webFormTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 4,
   },
 });
 

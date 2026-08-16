@@ -10,6 +10,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import "../global.css";
 
+import NativeUpdateProgress from "@/components/AppUpdate/NativeUpdateProgress";
 import { setRichToastRef } from "@/components/shared/CustomToast/message";
 import RichToast from "@/components/shared/CustomToast/RichToast";
 import UpdateBanner from "@/components/UpdateBanner/UpdateBanner";
@@ -44,6 +45,7 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }} />
               <Toast config={toastConfig} />
               <UpdateBanner />
+              <NativeUpdateProgress />
               <RichToast ref={(ref) => setRichToastRef(ref)} />
             </SafeAreaView>
           </ThemeWatcher>

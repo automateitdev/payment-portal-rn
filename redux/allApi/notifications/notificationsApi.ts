@@ -41,8 +41,28 @@ export const notificationsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Notifications"],
     }),
+
+    markAllNotificationsRead: builder.mutation<void, void>({
+      query: () => ({
+        url: "/payment-portal/notifications/read-all",
+        method: "POST",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
+
+    clearAllNotifications: builder.mutation<void, void>({
+      query: () => ({
+        url: "/payment-portal/notifications",
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
   }),
 });
 
-export const { useFetchNotificationsQuery, useMarkNotificationReadMutation } =
-  notificationsApi;
+export const {
+  useFetchNotificationsQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useClearAllNotificationsMutation,
+} = notificationsApi;
