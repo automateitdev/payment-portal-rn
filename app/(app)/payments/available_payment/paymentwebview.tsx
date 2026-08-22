@@ -1,9 +1,35 @@
 // src/screens/payments/PaymentWebView.tsx
-import React, { useState, useRef } from "react";
-import { View, Text, ActivityIndicator, Alert } from "react-native";
+import React, { useRef, useState } from "react";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { WebView, WebViewNavigation } from "react-native-webview";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// The WebView sees the gateway's terminal redirect URL (e.g.
+// "paymentportal://payments/available_payment/fail?status=400&invoice=ACM...")
+// directly as `navState.url` — even when the OS itself can't "open" that
+// custom scheme (react-native-webview's own Linking.openURL fallback fails
+// with "Can't open url" for non-http schemes). We don't need that fallback
+// to succeed; we just read the query params straight off the URL string.
+const parseQueryParams = (url: string): Record<string, string> => {
+  const queryIndex = url.indexOf("?");
+  if (queryIndex === -1) return {};
+  const query = url.slice(queryIndex + 1);
+  const result: Record<string, string> = {};
+  query.split("&").forEach((pair) => {
+    if (!pair) return;
+    const [key, value = ""] = pair.split("=");
+    if (!key) return;
+    try {
+      result[decodeURIComponent(key)] = decodeURIComponent(
+        value.replace(/\+/g, " "),
+      );
+    } catch {
+      result[key] = value;
+    }
+  });
+  return result;
+};
 
 const PaymentWebView = () => {
   const router = useRouter();
@@ -16,6 +42,7 @@ const PaymentWebView = () => {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
   const [_canGoBack, setCanGoBack] = useState(false);
+  const hasNavigatedRef = useRef(false);
 
   const { payment_url, transaction_id, amount } = params;
 
@@ -28,27 +55,42 @@ const PaymentWebView = () => {
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
 
-    // Check for success/failure URLs in the navigation
-    const currentUrl = navState.url.toLowerCase();
+    // onNavigationStateChange fires repeatedly (load start, redirects, load
+    // end) for the same terminal URL — only act on the first match so we
+    // don't call router.replace multiple times for one outcome.
+    if (hasNavigatedRef.current) {
+      setLoading(navState.loading);
+      return;
+    }
+
+    const currentUrl = navState.url;
+    const lowerUrl = currentUrl.toLowerCase();
+    const queryParams = parseQueryParams(currentUrl);
+
     // These are example URLs - adjust based on your payment gateway
-    if (currentUrl.includes("success") || currentUrl.includes("approved")) {
+    if (lowerUrl.includes("success") || lowerUrl.includes("approved")) {
       // Payment successful
+      hasNavigatedRef.current = true;
       router.replace({
         pathname: "/payments/available_payment/success",
         params: {
-          transaction_id,
-          amount_paid: amount,
+          transaction_id: queryParams.transaction_id || transaction_id,
+          invoice_no: queryParams.invoice || "",
+          amount_paid: queryParams.amount || amount,
           payment_date: new Date().toISOString(),
           message: "Payment completed successfully via payment gateway",
         },
       });
-    } else if (currentUrl.includes("fail") || currentUrl.includes("cancel")) {
+    } else if (lowerUrl.includes("fail") || lowerUrl.includes("cancel")) {
       // Payment failed or cancelled
+      hasNavigatedRef.current = true;
       router.replace({
         pathname: "/payments/available_payment/fail",
         params: {
-          transaction_id,
-          amount,
+          status: queryParams.status || "",
+          invoice: queryParams.invoice || "",
+          transaction_id: queryParams.transaction_id || transaction_id,
+          amount: queryParams.amount || amount,
           error_message: "Payment was cancelled or failed",
         },
       });

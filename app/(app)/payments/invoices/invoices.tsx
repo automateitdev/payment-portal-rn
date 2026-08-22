@@ -1,7 +1,14 @@
 import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
+import { useGetGeneralConfigsQuery } from "@/redux/allApi/generalConfigApi/generalConfigApi";
 import { useFetchInvoicesQuery } from "@/redux/allApi/invoices/invoicesApi";
 import { useAppSelector } from "@/redux/hook";
 import { RootState } from "@/redux/store";
+import {
+  generateMoneyReceiptHtml,
+  getReceiptPrintDimensions,
+  getReceiptQrImageUrl,
+  getReceiptTemplateKind,
+} from "@/utils/receipt/moneyReceiptHtml";
 import { showToast } from "@/utils/toast";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
@@ -12,6 +19,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Platform,
   RefreshControl,
@@ -132,19 +140,23 @@ type ReceiptRow = {
 type ReceiptData = {
   instituteName: string;
   instituteAddress: string;
+  instituteLogoUrl: string;
   invoiceNo: string;
   studentId: string;
   studentName: string;
   phone: string;
   department: string;
+  group: string;
   classShiftSection: string;
   studentRoll: string;
+  academicYear: string;
   academicYearSession: string;
   paymentDate: string;
   paymentMethod: string;
   collectedBy: string;
   paymentStatus: string;
   totalAmount: number;
+  softwareCharge: number;
   amountInWords: string;
   rows: ReceiptRow[];
   absentFine: number;
@@ -277,6 +289,12 @@ const Invoices = () => {
     { skip: !userData.student_id },
   );
 
+  const { data: generalConfigs } = useGetGeneralConfigsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+
   const invoices: InvoiceItem[] = Array.isArray(invoicesResponse)
     ? invoicesResponse
     : invoicesResponse?.payload?.data?.enlistment_list?.data ||
@@ -290,6 +308,7 @@ const Invoices = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -442,6 +461,7 @@ const Invoices = () => {
       return {
         instituteName: userData.institute_name || "Institute",
         instituteAddress: userData.institute_address || "",
+        instituteLogoUrl: userData.institute_logo || "",
         invoiceNo: invoice.invoice || "-",
         studentId:
           payee.custom_student_id ||
@@ -459,9 +479,12 @@ const Invoices = () => {
           firstDetail?.department ||
           userData.department_name ||
           "-",
+        group: payee.group || firstDetail?.group || userData.group || "-",
         classShiftSection,
         studentRoll: String(payee.class_roll || userData.roll || "-"),
+        academicYear,
         academicYearSession: `${academicYear} / ${academicSession}`,
+        softwareCharge: toNumber(invoice.commission),
         paymentDate: formatDate(invoice.payment_date),
         paymentMethod:
           invoice.payment_method?.toUpperCase() === "QC"
@@ -479,251 +502,6 @@ const Invoices = () => {
     },
     [userData],
   );
-
-  const escapeHtml = (value?: string | number | null) =>
-    String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-
-  const getReceiptHtml = useCallback((receipt: ReceiptData) => {
-    const rowsHtml = receipt.rows
-      .map(
-        (row) => `
-            <tr>
-              <td>${escapeHtml(row.academicYear)}</td>
-              <td>${escapeHtml(row.feeHead)}</td>
-              <td>${escapeHtml(row.feeSubHead)}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.feeAmount))}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.paidFine))}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.waiver))}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.previouslyPaid))}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.paidAmount))}</td>
-              <td class="numeric">${escapeHtml(formatCurrency(row.dueAmount))}</td>
-            </tr>
-          `,
-      )
-      .join("");
-
-    return `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8" />
-            <style>
-              @page {
-                size: A5 portrait;
-                margin: 8mm;
-              }
-              * {
-                box-sizing: border-box;
-              }
-              html, body {
-                width: 132mm;
-                min-height: 194mm;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-              }
-              body {
-                font-family: Arial, sans-serif;
-                background: #ffffff;
-                margin: 0;
-                color: #111827;
-              }
-              .sheet {
-                border: 2px solid #2f2f2f;
-                width: 100%;
-                min-height: 100%;
-                padding: 10px;
-              }
-              .institute {
-                font-size: 12px;
-                font-weight: 700;
-                text-transform: uppercase;
-                margin-bottom: 2px;
-              }
-              .address {
-                font-size: 9px;
-                margin-bottom: 8px;
-              }
-              .title {
-                font-size: 12px;
-                font-weight: 700;
-                text-align: center;
-                text-decoration: underline;
-                margin-bottom: 8px;
-              }
-              .meta {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 8px;
-              }
-              .meta td {
-                font-size: 8.5px;
-                padding: 1px 3px;
-                vertical-align: top;
-                line-height: 1.25;
-              }
-              .label {
-                width: 92px;
-              }
-              .value {
-                width: 120px;
-              }
-              .details {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 6px;
-                table-layout: fixed;
-              }
-              .details th,
-              .details td {
-                border: 1px solid #1f2937;
-                padding: 3px 4px;
-                font-size: 7.5px;
-                line-height: 1.2;
-                word-break: break-word;
-              }
-              .details th {
-                background: #f8fafc;
-                text-align: center;
-                font-weight: 700;
-              }
-              .numeric {
-                text-align: right;
-              }
-              .totals-label {
-                font-weight: 700;
-                text-align: right;
-              }
-              .remarks-row td {
-                font-size: 7.5px;
-              }
-              .footer {
-                margin-top: 24px;
-                padding-top: 6px;
-                border-top: 1px solid #d1d5db;
-                display: flex;
-                justify-content: space-between;
-                gap: 10px;
-                font-size: 7.5px;
-                color: #4b5563;
-              }
-              .footer strong {
-                color: #374151;
-              }
-              .footer > div {
-                flex: 1;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="sheet">
-              <div class="institute">${escapeHtml(receipt.instituteName)}</div>
-              <div class="address">${escapeHtml(receipt.instituteAddress)}</div>
-              <div class="title">Money Receipt</div>
-
-              <table class="meta">
-                <tr>
-                  <td class="label">Student ID</td>
-                  <td class="value">: ${escapeHtml(receipt.studentId)}</td>
-                  <td class="label">Academic Year and Session</td>
-                  <td>: ${escapeHtml(receipt.academicYearSession)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Name</td>
-                  <td class="value">: ${escapeHtml(receipt.studentName)}</td>
-                  <td class="label">Invoice No</td>
-                  <td>: ${escapeHtml(receipt.invoiceNo)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Phone</td>
-                  <td class="value">: ${escapeHtml(receipt.phone)}</td>
-                  <td class="label">Payment Date</td>
-                  <td>: ${escapeHtml(receipt.paymentDate)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Department</td>
-                  <td class="value">: ${escapeHtml(receipt.department)}</td>
-                  <td class="label">Payment Method</td>
-                  <td>: ${escapeHtml(receipt.paymentMethod)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Class-Shift-Section</td>
-                  <td class="value">: ${escapeHtml(receipt.classShiftSection)}</td>
-                  <td class="label">Collected By</td>
-                  <td>: ${escapeHtml(receipt.collectedBy)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Student Roll</td>
-                  <td class="value">: ${escapeHtml(receipt.studentRoll)}</td>
-                  <td class="label">Payment Status</td>
-                  <td>: ${escapeHtml(receipt.paymentStatus)}</td>
-                </tr>
-              </table>
-
-              <table class="details">
-                <thead>
-                  <tr>
-                    <th>Academic Year</th>
-                    <th>Fee Head</th>
-                    <th>Fee Sub Head</th>
-                    <th>Fee Amount</th>
-                    <th>Paid Fine</th>
-                    <th>Waiver</th>
-                    <th>Previously Paid</th>
-                    <th>Paid Amount</th>
-                    <th>Due Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rowsHtml}
-                  <tr>
-                    <td colspan="3" class="totals-label">Totals:</td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.feeAmount, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.paidFine, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.waiver, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.previouslyPaid, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.paidAmount, 0)))}</strong></td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt?.rows?.reduce((sum, row) => sum + row.dueAmount, 0)))}</strong></td>
-                  </tr>
-                  ${
-                    receipt.absentFine > 0
-                      ? `
-                  <tr>
-                    <td colspan="7" class="totals-label">Absent Fine</td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.absentFine))}</strong></td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td colspan="7" class="totals-label">Grand Total</td>
-                    <td class="numeric"><strong>${escapeHtml(formatCurrency(receipt.totalAmount))}</strong></td>
-                    <td></td>
-                  </tr>
-                  `
-                      : ""
-                  }
-                  <tr class="remarks-row">
-                    <td><strong>In Word:</strong></td>
-                    <td colspan="2">${escapeHtml(receipt?.amountInWords)}</td>
-                    <td><strong>Remarks</strong></td>
-                    <td colspan="5"></td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div class="footer">
-                <div><strong>Powered By:</strong> Academy-Institute Management System</div>
-                <div><strong>Note:</strong> This Money Receipt was created on a software.</div>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-  }, []);
 
   const downloadPdfOnWeb = async (invoice: InvoiceItem, html: string) => {
     const iframe = document.createElement("iframe");
@@ -776,14 +554,26 @@ const Invoices = () => {
     frameDocument.write(html);
     frameDocument.close();
 
-    if (iframe.contentWindow?.document.readyState === "complete") {
-      printFrame();
-      return;
-    }
+    // document.write()+close() flips readyState to "complete" synchronously,
+    // well before any remote <img> in the written HTML has actually loaded —
+    // so printing on readyState/onload alone intermittently misses images
+    // (logo, QR) depending on network speed. Wait for every <img> to settle
+    // (load or error) first, with a timeout so a stuck image can't block
+    // printing forever.
+    const images = Array.from(frameDocument.images);
+    const waitForImage = (img: HTMLImageElement) =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            img.addEventListener("load", () => resolve(), { once: true });
+            img.addEventListener("error", () => resolve(), { once: true });
+          });
+    const imagesReady = Promise.race([
+      Promise.all(images.map(waitForImage)),
+      new Promise<void>((resolve) => window.setTimeout(resolve, 4000)),
+    ]);
 
-    iframe.onload = () => {
-      printFrame();
-    };
+    imagesReady.then(printFrame);
   };
 
   const downloadPdfOnAndroid = async (
@@ -822,18 +612,20 @@ const Invoices = () => {
       try {
         setDownloadingId(invoice.id);
         const receipt = buildReceiptData(invoice);
-        const html = getReceiptHtml(receipt);
+        const receiptType = generalConfigs?.payment_portal_receipt_type;
+        const html = await generateMoneyReceiptHtml(receipt, receiptType);
 
         if (Platform.OS === "web") {
           await downloadPdfOnWeb(invoice, html);
           return;
         }
 
+        const { width, height } = getReceiptPrintDimensions(receiptType);
         const result = await Print.printToFileAsync({
           html,
           base64: true,
-          width: 420,
-          height: 595,
+          width,
+          height,
         });
 
         if (Platform.OS === "android" && result.base64) {
@@ -862,7 +654,7 @@ const Invoices = () => {
         setDownloadingId(null);
       }
     },
-    [buildReceiptData, getReceiptHtml],
+    [buildReceiptData, generalConfigs],
   );
 
   const selectedReceipt = useMemo(
@@ -870,7 +662,19 @@ const Invoices = () => {
     [buildReceiptData, selectedInvoice],
   );
 
-  const hasAnyPaid = invoices.some((invoice) => {
+  const availableStatuses = Array.from(
+    new Set(invoices.map((invoice) => getStatusLabel(invoice.payment_state))),
+  );
+  const filterOptions = ["All", ...availableStatuses];
+
+  const filteredInvoices =
+    statusFilter === "All"
+      ? invoices
+      : invoices.filter(
+          (invoice) => getStatusLabel(invoice.payment_state) === statusFilter,
+        );
+
+  const hasAnyPaid = filteredInvoices.some((invoice) => {
     const state = invoice.payment_state?.toUpperCase();
     return state === "COMPLETED" || state === "PAID";
   });
@@ -1111,6 +915,126 @@ const Invoices = () => {
     );
   };
 
+  const InvoiceCard = ({ item }: { item: InvoiceItem }) => {
+    const isDownloading = downloadingId === item.id;
+    const isPaid =
+      item.payment_state?.toUpperCase() === "COMPLETED" ||
+      item.payment_state?.toUpperCase() === "PAID";
+
+    return (
+      <View
+        className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800"
+        style={{
+          shadowColor: "#0f172a",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 3,
+        }}
+      >
+        <View className="flex-row items-center gap-3 px-4 py-3.5 bg-blue-50/60 dark:bg-blue-500/10 border-b border-blue-100/70 dark:border-slate-800">
+          <View className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 items-center justify-center border border-blue-100 dark:border-slate-700">
+            <Feather name="file-text" size={16} color="#3b82f6" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text className="text-[10px] font-bold text-blue-400 dark:text-blue-300/70 uppercase tracking-wider">
+              Invoice No
+            </Text>
+            <Text
+              className="font-bold text-slate-900 dark:text-slate-100 text-sm"
+              numberOfLines={1}
+              selectable
+            >
+              {item.invoice}
+            </Text>
+          </View>
+          <StatusChip state={item.payment_state} />
+        </View>
+
+        <View className="px-4 pt-4 pb-4">
+          <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+            Amount Paid
+          </Text>
+          <Text className="text-slate-900 dark:text-white text-2xl font-black mb-4">
+            Tk {formatCurrency(item.pay_amount)}
+          </Text>
+
+          <View className="flex-row gap-3 mb-4">
+            <View className="flex-1 flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-3 py-2.5">
+              <Feather name="calendar" size={14} color="#94a3b8" />
+              <View>
+                <Text className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                  Date
+                </Text>
+                <Text className="text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                  {formatDate(item.payment_date)}
+                </Text>
+              </View>
+            </View>
+            <View className="flex-1 flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-3 py-2.5">
+              <Feather name="credit-card" size={14} color="#94a3b8" />
+              <View>
+                <Text className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                  Method
+                </Text>
+                <Text
+                  className="text-slate-700 dark:text-slate-300 text-xs font-semibold"
+                  numberOfLines={1}
+                >
+                  {item.payment_method || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {isPaid && (
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => openReceipt(item)}
+                className="flex-1 flex-row items-center justify-center gap-2 border border-blue-200 dark:border-blue-500/30 py-2.5 rounded-xl"
+              >
+                <Feather name="eye" size={16} color="#3b82f6" />
+                <Text className="text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                  View
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => generatePDF(item)}
+                disabled={isDownloading}
+                activeOpacity={0.85}
+                style={{ flex: 1, borderRadius: 12, overflow: "hidden" }}
+              >
+                <LinearGradient
+                  colors={["#10b981", "#059669"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    paddingVertical: 10,
+                  }}
+                >
+                  {isDownloading ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <>
+                      <Feather name="download" size={16} color="#ffffff" />
+                      <Text className="text-white font-semibold text-xs">
+                        Download
+                      </Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <View className="flex-1 bg-gray-50 dark:bg-slate-950 items-center justify-center">
@@ -1183,6 +1107,41 @@ const Invoices = () => {
           </View>
         </View>
 
+        {!error && invoices.length > 0 && (
+          <View className={`mx-4 mt-6 ${isSmallScreen ? "mx-3" : ""}`}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {filterOptions.map((option) => {
+                const isActive = statusFilter === option;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => setStatusFilter(option)}
+                    className={`px-4 py-2 rounded-full border ${
+                      isActive
+                        ? "bg-blue-600 border-blue-600"
+                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-semibold ${
+                        isActive
+                          ? "text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {error ? (
           <View
             className={`mx-4 mt-6 bg-white dark:bg-slate-900 p-10 rounded-2xl items-center shadow-sm border border-gray-100 dark:border-slate-800 ${isSmallScreen ? "p-6 mx-3" : ""}`}
@@ -1230,6 +1189,40 @@ const Invoices = () => {
               <Text className="text-white font-medium">Refresh</Text>
             </TouchableOpacity>
           </View>
+        ) : filteredInvoices.length === 0 ? (
+          <View
+            className={`mx-4 mt-6 bg-white dark:bg-slate-900 p-10 rounded-2xl items-center shadow-sm border border-gray-100 dark:border-slate-800 ${isSmallScreen ? "p-6 mx-3" : ""}`}
+          >
+            <Feather
+              name="filter"
+              size={isSmallScreen ? 36 : 48}
+              color="#9ca3af"
+            />
+            <Text
+              className={`mt-4 text-gray-600 dark:text-slate-400 font-medium ${isSmallScreen ? "text-sm" : ""}`}
+            >
+              No {statusFilter.toLowerCase()} invoices
+            </Text>
+            <TouchableOpacity
+              onPress={() => setStatusFilter("All")}
+              className="mt-6 bg-blue-600 px-8 py-3 rounded-xl"
+            >
+              <Text className="text-white font-medium">Show All</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !isWeb ? (
+          <View
+            className={`mx-4 mt-6 ${isSmallScreen ? "mx-3" : ""}`}
+            style={{ gap: 12 }}
+          >
+            <FlatList
+              data={filteredInvoices}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => <InvoiceCard item={item} />}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            />
+          </View>
         ) : (
           <View
             className={`mx-4 mt-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden ${isSmallScreen ? "mx-3" : ""}`}
@@ -1238,7 +1231,7 @@ const Invoices = () => {
               <View style={{ width: "100%" }}>
                 <TableHeader />
                 <FlatList
-                  data={invoices}
+                  data={filteredInvoices}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => <InvoiceRow item={item} />}
                   scrollEnabled={false}
@@ -1248,7 +1241,7 @@ const Invoices = () => {
               <HScrollTable minWidth={hasAnyPaid ? 650 : 550}>
                 <TableHeader />
                 <FlatList
-                  data={invoices}
+                  data={filteredInvoices}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => <InvoiceRow item={item} />}
                   scrollEnabled={false}
@@ -1318,6 +1311,7 @@ const Invoices = () => {
                   receipt={selectedReceipt}
                   formatCurrency={formatCurrency}
                   isMobile={!isDesktop}
+                  receiptType={generalConfigs?.payment_portal_receipt_type}
                 />
               </ScrollView>
             </View>
@@ -1329,6 +1323,35 @@ const Invoices = () => {
 };
 
 function ReceiptPreview({
+  receipt,
+  formatCurrency,
+  isMobile,
+  receiptType,
+}: {
+  receipt: ReceiptData;
+  formatCurrency: (value?: number | string | null) => string;
+  isMobile: boolean;
+  receiptType?: string | null;
+}) {
+  if (getReceiptTemplateKind(receiptType) === "simple") {
+    return (
+      <SimpleReceiptPreview
+        receipt={receipt}
+        formatCurrency={formatCurrency}
+        isMobile={isMobile}
+      />
+    );
+  }
+  return (
+    <RichReceiptPreview
+      receipt={receipt}
+      formatCurrency={formatCurrency}
+      isMobile={isMobile}
+    />
+  );
+}
+
+function RichReceiptPreview({
   receipt,
   formatCurrency,
   isMobile,
@@ -1356,15 +1379,24 @@ function ReceiptPreview({
     },
   );
 
+  const qrUrl = useMemo(() => getReceiptQrImageUrl(receipt), [receipt]);
+
   return (
     <View className="bg-slate-50 p-4 rounded-xl">
       <View className="bg-white border-2 border-slate-700 px-4 py-4">
-        <Text className="text-slate-900 text-xl font-black uppercase">
-          {receipt.instituteName}
-        </Text>
-        <Text className="text-slate-600 text-xs mt-1">
-          {receipt.instituteAddress}
-        </Text>
+        <View
+          style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text className="text-slate-900 text-xl font-black uppercase">
+              {receipt.instituteName}
+            </Text>
+            <Text className="text-slate-600 text-xs mt-1">
+              {receipt.instituteAddress}
+            </Text>
+          </View>
+          <Image source={{ uri: qrUrl }} style={{ width: 56, height: 56 }} />
+        </View>
 
         <Text className="text-center text-lg font-black underline mt-4 mb-4">
           Money Receipt
@@ -1548,6 +1580,187 @@ function ReceiptPreview({
             Receipt was created on a software.
           </Text>
         </View>
+      </View>
+    </View>
+  );
+}
+
+function SimpleReceiptPreview({
+  receipt,
+  formatCurrency,
+  isMobile,
+}: {
+  receipt: ReceiptData;
+  formatCurrency: (value?: number | string | null) => string;
+  isMobile: boolean;
+}) {
+  const totalPayable = receipt.rows.reduce(
+    (sum, row) => sum + row.feeAmount,
+    0,
+  );
+  const dueAmount = receipt.rows.reduce((sum, row) => sum + row.dueAmount, 0);
+  const qrUrl = useMemo(() => getReceiptQrImageUrl(receipt), [receipt]);
+
+  return (
+    <View className="bg-slate-50 p-4 rounded-xl">
+      <View className="bg-white border-2 border-slate-700 px-4 py-4">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          {receipt.instituteLogoUrl ? (
+            <Image
+              source={{ uri: receipt.instituteLogoUrl }}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#e2e8f0",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text className="text-slate-700 font-black">
+                {receipt.instituteName.charAt(0)}
+              </Text>
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text className="text-slate-900 text-base font-black uppercase">
+              {receipt.instituteName}
+            </Text>
+            <Text className="text-slate-600 text-[10px]">
+              {receipt.instituteAddress}
+            </Text>
+          </View>
+          <Image
+            source={{ uri: qrUrl }}
+            style={{ width: 48, height: 48 }}
+          />
+        </View>
+
+        <Text className="text-center text-lg font-black underline mt-4 mb-4">
+          Money Receipt
+        </Text>
+
+        <View>
+          <MetaLine label="Student ID" value={receipt.studentId} />
+          <MetaLine label="Name" value={receipt.studentName} />
+          <MetaLine label="Group" value={receipt.group} />
+          <MetaLine
+            label="Class-Shift-Section"
+            value={receipt.classShiftSection}
+          />
+          <MetaLine label="Roll No" value={receipt.studentRoll} />
+          <MetaLine label="Mobile No" value={receipt.phone} />
+        </View>
+
+        <HorizontalScrollView horizontal showsHorizontalScrollIndicator>
+          <View className="mt-4" style={{ minWidth: isMobile ? 620 : 620 }}>
+            <View className="flex-row border border-slate-800 bg-slate-100">
+              <ReceiptCell text="Acad. Year" width={90} header />
+              <ReceiptCell text="Fee Head" width={125} header />
+              <ReceiptCell text="Fee Sub Heads" width={140} header />
+              <ReceiptCell text="Waiver" width={85} header />
+              <ReceiptCell text="Fine" width={85} header />
+              <ReceiptCell text="Payable" width={95} header isLast />
+            </View>
+
+            {receipt.rows.map((row, index) => (
+              <View
+                key={`${row.feeHead}-${row.feeSubHead}-${index}`}
+                className="flex-row border-x border-b border-slate-800"
+              >
+                <ReceiptCell text={row.academicYear} width={90} />
+                <ReceiptCell text={row.feeHead} width={125} />
+                <ReceiptCell text={row.feeSubHead} width={140} />
+                <ReceiptCell
+                  text={formatCurrency(row.waiver)}
+                  width={85}
+                  align="right"
+                />
+                <ReceiptCell
+                  text={formatCurrency(row.paidFine)}
+                  width={85}
+                  align="right"
+                />
+                <ReceiptCell
+                  text={formatCurrency(row.feeAmount)}
+                  width={95}
+                  align="right"
+                  isLast
+                />
+              </View>
+            ))}
+
+            <View className="flex-row border-x border-b border-slate-800">
+              <ReceiptCell text="Note:" width={440} align="left" bold />
+              <ReceiptCell text="Total Payable" width={95} align="right" />
+              <ReceiptCell
+                text={formatCurrency(totalPayable)}
+                width={95}
+                align="right"
+                bold
+                isLast
+              />
+            </View>
+          </View>
+        </HorizontalScrollView>
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: 32,
+            marginTop: 4,
+          }}
+        >
+          <Text className="text-xs text-slate-700">
+            Paid Amount:{" "}
+            <Text className="font-black">
+              {formatCurrency(receipt.totalAmount)}
+            </Text>
+          </Text>
+          <Text className="text-xs text-slate-700">
+            Due Amount:{" "}
+            <Text className="font-black">{formatCurrency(dueAmount)}</Text>
+          </Text>
+        </View>
+
+        <Text className="text-xs text-slate-700 mt-3">
+          <Text className="font-bold">Paid In Word:</Text>{" "}
+          {receipt.amountInWords}
+        </Text>
+        <Text className="text-xs text-slate-700 mt-1">
+          <Text className="font-bold">Software Charge</Text> :{" "}
+          {formatCurrency(receipt.softwareCharge)}
+        </Text>
+
+        <View className="mt-3 pt-2 border-t border-slate-300">
+          <MetaLine label="Invoice ID" value={receipt.invoiceNo} />
+          <MetaLine label="Academic Year" value={receipt.academicYear} />
+          <MetaLine label="Payment Date" value={receipt.paymentDate} />
+          <View className="flex-row justify-between items-start">
+            <View style={{ flex: 1 }}>
+              <MetaLine label="Collected By" value={receipt.collectedBy} />
+            </View>
+            <Text className="text-rose-600 text-xs font-bold">
+              No need to sign
+            </Text>
+          </View>
+        </View>
+
+        <Text className="text-[11px] text-slate-500 mt-2">
+          <Text className="font-bold text-slate-700">Powered By:</Text>{" "}
+          Academy-Institute Management System
+        </Text>
       </View>
     </View>
   );

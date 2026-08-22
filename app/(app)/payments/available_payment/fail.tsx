@@ -1,39 +1,92 @@
 // src/screens/payments/PaymentFailure.tsx
-import React from "react";
+import { useGetInstituteInfoQuery } from "@/redux/allApi/authApi/authApi";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useMemo } from "react";
 import {
-  View,
+  Linking,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Linking,
+  View,
 } from "react-native";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface PaymentFailureParams {
+  // Real deep-link redirect from the payment gateway:
+  // paymentportal://payments/available_payment/fail?status=400&invoice=ACM...
+  // paymentwebview.tsx parses these straight off navState.url and forwards
+  // them here — no OS "open URL" hand-off needed.
+  status?: string;
+  invoice?: string;
+  // Legacy in-app navigation params (still supported as a fallback).
   error_code?: string;
   error_message?: string;
-  transaction_id?: string;
   amount?: string;
 }
+
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatCurrency = (value?: number | string | null) => {
+  const num = typeof value === "string" ? parseFloat(value) : (value ?? NaN);
+  if (Number.isNaN(num)) return null;
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 const PaymentFailure = () => {
   const router = useRouter();
   const params = useLocalSearchParams<PaymentFailureParams>();
 
   const {
-    error_code = "PAYMENT_FAILED",
+    status,
+    invoice,
+    error_code,
     error_message = "We could not process the payment currently. Please try later!",
-    transaction_id = "",
-    amount = "0",
+    amount,
   } = params;
+
+  // Student/institute ID come from the logged-in user's own account info —
+  // not from the failed payment itself. `invoice` and `amount` are forwarded
+  // by paymentwebview.tsx, parsed directly off the gateway's redirect URL
+  // (navState.url) rather than from any API lookup.
+  const { data: instituteData } = useGetInstituteInfoQuery({});
+  const userData = useMemo(
+    () => instituteData?.payload?.data?.user || {},
+    [instituteData],
+  );
+
+  const displayInvoiceNo = invoice || "";
+  const displayAmount = formatCurrency(amount);
+  const displayDate = formatDate(new Date().toISOString());
+  const displayStudentId = userData.student_id || "";
+  const displayInstituteId = userData.institute_id || "";
+  const displayErrorCode = status || error_code || "PAYMENT_FAILED";
 
   const handleContactSupport = () => {
     // Implement contact support logic
     const supportEmail = "cs.edufee@gmail.com";
-    const subject = `Payment Failed - Transaction ID: ${transaction_id}`;
-    const body = `Transaction ID: ${transaction_id}\nError Code: ${error_code}\nAmount: ৳${amount}`;
+    const subject = `Payment Failed - ${displayInvoiceNo || displayErrorCode}`;
+    const body = [
+      `Invoice: ${displayInvoiceNo || "-"}`,
+      `Date: ${displayDate}`,
+      `Amount: ৳${displayAmount || amount || "-"}`,
+      `Student ID: ${displayStudentId || "-"}`,
+      `Institute ID: ${displayInstituteId || "-"}`,
+      `Error Code: ${displayErrorCode}`,
+      `Error Message: ${error_message}`,
+    ].join("\n");
 
     Linking.openURL(
       `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
@@ -70,31 +123,67 @@ const PaymentFailure = () => {
             </Text>
 
             <View className="space-y-4">
-              {transaction_id ? (
+              {displayInvoiceNo ? (
                 <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
-                  <Text className="text-gray-600 font-medium">
-                    Transaction ID
-                  </Text>
-                  <Text className="text-gray-800 font-semibold">
-                    {transaction_id}
+                  <Text className="text-gray-600 font-medium">Invoice ID</Text>
+                  <Text className="text-gray-800 font-semibold" selectable>
+                    {displayInvoiceNo}
                   </Text>
                 </View>
               ) : null}
 
               <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                 <Text className="text-gray-600 font-medium">Error Code</Text>
-                <Text className="text-red-600 font-semibold">{error_code}</Text>
+                <Text className="text-red-600 font-semibold">
+                  {displayErrorCode}
+                </Text>
               </View>
 
-              {amount && amount !== "0" ? (
-                <View className="flex-row justify-between items-center py-2">
+              {error_message ? (
+                <View className="flex-row justify-between items-start py-2 border-b border-gray-100">
+                  <Text className="text-gray-600 font-medium">
+                    Error Message
+                  </Text>
+                  <Text className="text-red-600 font-semibold text-right flex-1 ml-4">
+                    {error_message}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                <Text className="text-gray-600 font-medium">Date</Text>
+                <Text className="text-gray-800 font-semibold">
+                  {displayDate}
+                </Text>
+              </View>
+            </View>
+
+            <View className="space-y-4">
+              {displayAmount ? (
+                <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                   <Text className="text-gray-600 font-medium">Amount</Text>
                   <Text className="text-gray-800 font-semibold">
-                    ৳{" "}
-                    {parseFloat(amount).toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ৳ {displayAmount}
+                  </Text>
+                </View>
+              ) : null}
+
+              {displayStudentId ? (
+                <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                  <Text className="text-gray-600 font-medium">Student ID</Text>
+                  <Text className="text-gray-800 font-semibold">
+                    {displayStudentId}
+                  </Text>
+                </View>
+              ) : null}
+
+              {displayInstituteId ? (
+                <View className="flex-row justify-between items-center py-2">
+                  <Text className="text-gray-600 font-medium">
+                    Institute ID
+                  </Text>
+                  <Text className="text-gray-800 font-semibold">
+                    {displayInstituteId}
                   </Text>
                 </View>
               ) : null}

@@ -13,6 +13,8 @@ interface GeneralConfig {
   real_time_present_sms: string | null;
   sms_type: string | null;
   collection_sms: string | null;
+  payment_portal_receipt_type: string | null;
+  quick_collection_receipt_type: string | null;
 }
 
 interface GeneralConfigResponse {
@@ -55,6 +57,8 @@ export const generalConfigApi = baseApi.injectEndpoints({
           real_time_present_sms: null,
           sms_type: null,
           collection_sms: null,
+          payment_portal_receipt_type: null,
+          quick_collection_receipt_type: null,
         };
 
         // Map config values by short_name
