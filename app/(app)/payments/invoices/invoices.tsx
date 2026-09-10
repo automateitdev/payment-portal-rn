@@ -1080,6 +1080,7 @@ const Invoices = () => {
               >
                 Academic Year: {userData.academic_year || "-"}
               </Text>
+
               <Text
                 className={`text-gray-600 dark:text-slate-400 ${isSmallScreen ? "text-xs" : "text-sm"} mb-1`}
               >
@@ -1640,10 +1641,7 @@ function SimpleReceiptPreview({
               {receipt.instituteAddress}
             </Text>
           </View>
-          <Image
-            source={{ uri: qrUrl }}
-            style={{ width: 48, height: 48 }}
-          />
+          <Image source={{ uri: qrUrl }} style={{ width: 48, height: 48 }} />
         </View>
 
         <Text className="text-center text-lg font-black underline mt-4 mb-4">
