@@ -15,10 +15,11 @@ const menuItems = [
     to: "/payments/available_payment/available_payment",
   },
   { label: "Open Payment", icon: "card", to: "/open-payment" },
+  { label: "Admission", icon: "school", to: "/onlineadmission" },
   { label: "Invoices", icon: "receipt", to: "/payments/invoices/invoices" },
   {
     label: "Exams",
-    icon: "school",
+    icon: "document-text",
     to: "/semester_exam/semester_exam/semester_exam",
   },
 ];

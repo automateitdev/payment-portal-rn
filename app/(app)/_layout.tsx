@@ -8,12 +8,12 @@ import { Redirect, Slot, Tabs, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ColorValue,
-  View,
-  Text,
   Platform,
   Pressable,
+  Text,
   TouchableOpacity,
   useWindowDimensions,
+  View,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -36,9 +36,9 @@ const TabIcon = ({
   const scale = useSharedValue(1);
 
   useEffect(() => {
-    scale.value = withSpring(focused ? 1.2 : 1, {
-      damping: 10,
-      stiffness: 100,
+    scale.value = withSpring(focused ? 1.08 : 1, {
+      damping: 14,
+      stiffness: 140,
     });
   }, [focused]);
 
@@ -46,9 +46,20 @@ const TabIcon = ({
     transform: [{ scale: scale.value }],
   }));
 
+  // Slightly smaller icon size (20-21px) so 6 tabs fit cleanly without clipping
+  const iconSize = Math.max(18, Math.min(size, 21));
+
   return (
-    <Animated.View style={animatedStyle}>
-      <Ionicons name={name} size={focused ? size + 2 : size} color={color} />
+    <Animated.View
+      style={[
+        {
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        animatedStyle,
+      ]}
+    >
+      <Ionicons name={name} size={iconSize} color={color as string} />
     </Animated.View>
   );
 };
@@ -207,19 +218,24 @@ const AppLayout = () => {
             backgroundColor: isDark ? "#1e293b" : "#ffffff",
             borderTopWidth: 1,
             borderTopColor: isDark ? "#334155" : "#f1f5f9",
-            height: 65 + insets.bottom,
-            paddingBottom: 8 + insets.bottom,
-            paddingTop: 8,
+            height: 60 + insets.bottom,
+            paddingBottom: 6 + insets.bottom,
+            paddingTop: 6,
             elevation: 8,
             shadowColor: isDark ? "#000" : "#000",
             shadowOffset: { width: 0, height: -4 },
             shadowOpacity: isDark ? 0.2 : 0.05,
             shadowRadius: 8,
           },
+          tabBarItemStyle: {
+            paddingHorizontal: 0,
+            paddingVertical: 2,
+          },
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 9.5,
             fontWeight: "600",
-            marginBottom: 5,
+            letterSpacing: -0.2,
+            marginBottom: 3,
           },
           // Added cool screen transition
           animation: "shift",
@@ -271,11 +287,26 @@ const AppLayout = () => {
           name="open-payment/[instituteId]"
           options={{ href: null }}
         />
-        {/* Online Admission is a guest-only flow (landing page) — routes
-            registered but kept out of the logged-in tab bar. */}
-        <Tabs.Screen name="onlineadmission/index" options={{ href: null }} />
+        <Tabs.Screen
+          name="onlineadmission/index"
+          options={{
+            title: "Admission",
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? "school" : "school-outline"}
+                size={size}
+                color={color}
+                focused={focused}
+              />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="onlineadmission/[instituteId]"
+          options={{ href: null }}
+        />
+        <Tabs.Screen
+          name="onlineadmission/preview/[key]"
           options={{ href: null }}
         />
         <Tabs.Screen
@@ -298,7 +329,7 @@ const AppLayout = () => {
             title: "Exams",
             tabBarIcon: ({ color, size, focused }) => (
               <TabIcon
-                name={focused ? "school" : "school-outline"}
+                name={focused ? "document-text" : "document-text-outline"}
                 size={size}
                 color={color}
                 focused={focused}
