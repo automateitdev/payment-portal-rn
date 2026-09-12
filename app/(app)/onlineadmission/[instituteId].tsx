@@ -127,6 +127,11 @@ interface EduInfoRow {
   passingYear: string;
 }
 
+const isEduRowBlank = (row: EduInfoRow) =>
+  Object.values(row).every((v) => v === "" || v == null);
+const isEduRowComplete = (row: EduInfoRow) =>
+  Object.values(row).every((v) => v !== "" && v != null);
+
 // A picked file, ready to append to FormData as a multipart file part.
 // `webFile` is only present on web (expo-document-picker returns a real
 // File there) — appending {uri,name,type} on web produces a JSON-ish blob
@@ -200,15 +205,21 @@ interface AdmissionApplicationForm {
 // consent/confirmation dialog opens. student_pic is checked separately
 // (see checkFields) since it lives in file state, not the RHF form.
 const REQUIRED_FIELDS: (keyof AdmissionApplicationForm)[] = [
+  "academic_year_id",
+  "department_id",
+  "class_id",
+  "group_id",
+  "shift_id",
+  "gender",
+  "religion",
   "student_name_bangla",
   "student_name_english",
   "student_mobile",
+  "nationality",
   "date_of_birth",
   "student_nid_or_birth_no",
-  "gender",
-  "religion",
+  "father_name_bangla",
   "father_name_english",
-  "mother_name_english",
   "present_address",
   "present_division",
   "present_district",
@@ -219,10 +230,6 @@ const REQUIRED_FIELDS: (keyof AdmissionApplicationForm)[] = [
   "permanent_district",
   "permanent_upozilla",
   "permanent_post_office",
-  "academic_year_id",
-  "class_id",
-  "shift_id",
-  "group_id",
 ];
 
 const DEFAULT_VALUES: AdmissionApplicationForm = {
@@ -342,10 +349,17 @@ const ApplyOnlineTab = ({
   feeMap,
 }: ApplyOnlineTabProps) => {
   const router = useRouter();
-  const { control, watch, setValue, handleSubmit } =
-    useForm<AdmissionApplicationForm>({
-      defaultValues: DEFAULT_VALUES,
-    });
+  const {
+    control,
+    watch,
+    setValue,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<AdmissionApplicationForm>({
+    defaultValues: DEFAULT_VALUES,
+  });
 
   const academicYearId = watch("academic_year_id");
   const departmentId = watch("department_id");
@@ -838,6 +852,32 @@ const ApplyOnlineTab = ({
     setValue("permanent_upozilla", "");
   }, [permanentDistrict]);
 
+  // Clear a required-field error as soon as that field gets a value.
+  const allValues = watch();
+  useEffect(() => {
+    (Object.keys(errors) as (keyof AdmissionApplicationForm)[]).forEach((k) => {
+      if (allValues[k]) clearErrors(k);
+    });
+  }, [allValues]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Red-ring wrapper for fields whose control can't show its own error. */
+  const RequiredWrap = ({
+    invalid,
+    children,
+  }: {
+    invalid: boolean;
+    children: React.ReactNode;
+  }) => (
+    <View className={invalid ? "rounded-xl border border-red-400 p-1" : ""}>
+      {children}
+      {invalid ? (
+        <Text className="mt-0.5 text-[11px] text-red-500">
+          This field is required
+        </Text>
+      ) : null}
+    </View>
+  );
+
   const updateEduInfo = (
     index: number,
     field: keyof EduInfoRow,
@@ -1093,9 +1133,10 @@ const ApplyOnlineTab = ({
         result.message || "Application submitted successfully.",
       );
       if (result.unique_number) {
-        router.push(
-          `/autoenroll/admission/preview/${result.unique_number}` as any,
-        );
+        router.push({
+          pathname: "/onlineadmission/preview/[key]",
+          params: { key: result.unique_number },
+        });
       }
     } catch (err) {
       setConfirmationVisible(false);
@@ -1109,22 +1150,34 @@ const ApplyOnlineTab = ({
   // checks — run before opening the consent/confirmation dialog.
   const isEduInformationFilled = () => {
     if (admissionData?.academic_info !== "YES") return true;
-    const isBlank = (row: EduInfoRow) =>
-      Object.values(row).every((v) => v === "" || v == null);
-    const isComplete = (row: EduInfoRow) =>
-      Object.values(row).every((v) => v !== "" && v != null);
     // "At least one required": every non-blank row must be fully filled, and
     // there must be at least one complete row.
     return (
-      eduInfo.some(isComplete) &&
-      eduInfo.every((row) => isBlank(row) || isComplete(row))
+      eduInfo.some(isEduRowComplete) &&
+      eduInfo.every((row) => isEduRowBlank(row) || isEduRowComplete(row))
     );
   };
 
+  const [eduError, setEduError] = useState(false);
+  // Clear the education error once the section becomes valid.
+  useEffect(() => {
+    if (eduError && isEduInformationFilled()) setEduError(false);
+  }, [eduInfo]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const checkFields = () => {
     const values = watch();
-    const missing = REQUIRED_FIELDS.some((field) => !values[field]);
-    if (missing) {
+    clearErrors();
+
+    // Highlight every invalid field at once (don't stop at the first).
+    const missingFields = REQUIRED_FIELDS.filter((field) => !values[field]);
+    missingFields.forEach((field) =>
+      setError(field, { type: "required", message: "This field is required" }),
+    );
+
+    const eduInvalid = !isEduInformationFilled();
+    setEduError(eduInvalid);
+
+    if (missingFields.length > 0 || eduInvalid) {
       showMessage(
         "error",
         "Missing fields",
@@ -1145,14 +1198,6 @@ const ApplyOnlineTab = ({
         "error",
         "Missing fields",
         "Please complete the subject selection.",
-      );
-      return;
-    }
-    if (!isEduInformationFilled()) {
-      showMessage(
-        "error",
-        "Missing fields",
-        "All education information fields must be filled.",
       );
       return;
     }
@@ -1202,7 +1247,7 @@ const ApplyOnlineTab = ({
   return (
     <View
       className="p-4"
-      style={{ maxWidth: 900, width: "100%", alignSelf: "center" }}
+      style={{ maxWidth: 1160, width: "100%", alignSelf: "center" }}
     >
       <ReusableButton
         title="Refresh"
@@ -1262,34 +1307,40 @@ const ApplyOnlineTab = ({
             />
           </FormCol>
           <FormCol>
-            <SelectDropdown
-              name="shift_id"
-              control={control}
-              options={shiftOptions}
-              label="Shift"
-              placeholder="Select Hall"
-              disabled={!groupId}
-            />
+            <RequiredWrap invalid={!!errors.shift_id}>
+              <SelectDropdown
+                name="shift_id"
+                control={control}
+                options={shiftOptions}
+                label="Shift"
+                placeholder="Select Hall"
+                disabled={!groupId}
+              />
+            </RequiredWrap>
           </FormCol>
           <FormCol>
-            <SelectDropdown
-              name="gender"
-              control={control}
-              options={genderOptions}
-              label="Gender"
-              placeholder="Select Gender"
-              disabled={!shiftId}
-            />
+            <RequiredWrap invalid={!!errors.gender}>
+              <SelectDropdown
+                name="gender"
+                control={control}
+                options={genderOptions}
+                label="Gender"
+                placeholder="Select Gender"
+                disabled={!shiftId}
+              />
+            </RequiredWrap>
           </FormCol>
           <FormCol>
-            <SelectDropdown
-              name="religion"
-              control={control}
-              options={religionOptions}
-              label="Religion"
-              placeholder="Select Religion"
-              disabled={!genderValue}
-            />
+            <RequiredWrap invalid={!!errors.religion}>
+              <SelectDropdown
+                name="religion"
+                control={control}
+                options={religionOptions}
+                label="Religion"
+                placeholder="Select Religion"
+                disabled={!genderValue}
+              />
+            </RequiredWrap>
           </FormCol>
         </FormRow>
 
@@ -1407,8 +1458,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="student_name_bangla"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Student Name (Bangla)"
@@ -1421,8 +1473,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="student_name_english"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Student Name (English)"
@@ -1435,8 +1488,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="student_mobile"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Student Contact"
@@ -1450,8 +1504,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="nationality"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Nationality"
@@ -1461,25 +1516,28 @@ const ApplyOnlineTab = ({
           </FormCol>
           <FormCol>
             <FieldLabel text="Date of Birth" required />
-            <Controller
-              name="date_of_birth"
-              control={control}
-              render={({ field }) => (
-                <CustomDatePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder="Date of Birth"
-                />
-              )}
-            />
+            <RequiredWrap invalid={!!errors.date_of_birth}>
+              <Controller
+                name="date_of_birth"
+                control={control}
+                render={({ field }) => (
+                  <CustomDatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Date of Birth"
+                  />
+                )}
+              />
+            </RequiredWrap>
           </FormCol>
           <FormCol>
             <FieldLabel text="NID / Birth Registration" required />
             <Controller
               name="student_nid_or_birth_no"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="NID or Birth certificate no."
@@ -1515,8 +1573,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="father_name_bangla"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Father Name (Bangla)"
@@ -1529,8 +1588,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="father_name_english"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Father Name (English)"
@@ -1695,8 +1755,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="present_address"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Address / Villages"
@@ -1733,8 +1794,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="present_post_office"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Post Office"
@@ -1778,8 +1840,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="permanent_address"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Address / Village"
@@ -1818,8 +1881,9 @@ const ApplyOnlineTab = ({
             <Controller
               name="permanent_post_office"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <ReusableInput
+                  error={!!fieldState.error}
                   value={field.value}
                   onChangeText={field.onChange}
                   placeholder="Post Office"
@@ -1947,99 +2011,121 @@ const ApplyOnlineTab = ({
             <Text style={{ color: "tomato" }}>* </Text>
             (Atleast One Required)
           </Text>
+          {eduError ? (
+            <Text className="text-[12px] text-red-500 mb-2 -mt-2">
+              Please fill in at least one complete qualification (all fields of
+              that row).
+            </Text>
+          ) : null}
 
-          {eduInfo.map((row, index) => (
-            <View
-              key={index}
-              className={
-                index > 0
-                  ? "mt-4 pt-4 border-t border-slate-200 relative"
-                  : "relative"
-              }
-            >
-              {eduInfo.length > 1 && (
-                <Pressable
-                  onPress={() => removeEduRow(index)}
-                  className="absolute right-0 top-0 z-10 h-7 w-7 items-center justify-center rounded-full bg-red-50"
-                >
-                  <Ionicons name="close" size={16} color="#dc2626" />
-                </Pressable>
-              )}
-              <FormRow>
-                <FormCol width="third">
-                  <SelectDropdown
-                    label="Exam"
-                    options={examOptions}
-                    value={row.exam}
-                    onChange={(v) => updateEduInfo(index, "exam", v)}
-                    placeholder="Select Exam"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <SelectDropdown
-                    label="Board"
-                    options={BOARD_OPTIONS}
-                    value={row.board}
-                    onChange={(v) => updateEduInfo(index, "board", v)}
-                    placeholder="Select Board"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="Institute" />
-                  <ReusableInput
-                    value={row.institute}
-                    onChangeText={(v) => updateEduInfo(index, "institute", v)}
-                    placeholder="Institute Name"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="Group" />
-                  <ReusableInput
-                    value={row.group}
-                    onChangeText={(v) => updateEduInfo(index, "group", v)}
-                    placeholder="Name of the Group/Dept."
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="Roll" />
-                  <ReusableInput
-                    value={row.roll}
-                    onChangeText={(v) => updateEduInfo(index, "roll", v)}
-                    placeholder="Roll No."
-                    inputType="number"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="Registration" />
-                  <ReusableInput
-                    value={row.registration}
-                    onChangeText={(v) =>
-                      updateEduInfo(index, "registration", v)
-                    }
-                    placeholder="Registration No."
-                    inputType="number"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="G.P.A" />
-                  <ReusableInput
-                    value={row.gpa}
-                    onChangeText={(v) => updateEduInfo(index, "gpa", v)}
-                    placeholder="GPA"
-                  />
-                </FormCol>
-                <FormCol width="third">
-                  <FieldLabel text="Passing Year" />
-                  <ReusableInput
-                    value={row.passingYear}
-                    onChangeText={(v) => updateEduInfo(index, "passingYear", v)}
-                    placeholder="Passing Year"
-                    inputType="number"
-                  />
-                </FormCol>
-              </FormRow>
-            </View>
-          ))}
+          {eduInfo.map((row, index) => {
+            const rowBad = eduError && !isEduRowComplete(row);
+            const bad = (v: string) => rowBad && !v;
+            return (
+              <View
+                key={index}
+                className={
+                  index > 0
+                    ? "mt-4 pt-4 border-t border-slate-200 relative"
+                    : "relative"
+                }
+              >
+                {eduInfo.length > 1 && (
+                  <Pressable
+                    onPress={() => removeEduRow(index)}
+                    className="absolute right-0 top-0 z-10 h-7 w-7 items-center justify-center rounded-full bg-red-50"
+                  >
+                    <Ionicons name="close" size={16} color="#dc2626" />
+                  </Pressable>
+                )}
+                <FormRow>
+                  <FormCol width="third">
+                    <RequiredWrap invalid={bad(row.exam)}>
+                      <SelectDropdown
+                        label="Exam"
+                        options={examOptions}
+                        value={row.exam}
+                        onChange={(v) => updateEduInfo(index, "exam", v)}
+                        placeholder="Select Exam"
+                      />
+                    </RequiredWrap>
+                  </FormCol>
+                  <FormCol width="third">
+                    <RequiredWrap invalid={bad(row.board)}>
+                      <SelectDropdown
+                        label="Board"
+                        options={BOARD_OPTIONS}
+                        value={row.board}
+                        onChange={(v) => updateEduInfo(index, "board", v)}
+                        placeholder="Select Board"
+                      />
+                    </RequiredWrap>
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="Institute" />
+                    <ReusableInput
+                      error={bad(row.institute)}
+                      value={row.institute}
+                      onChangeText={(v) => updateEduInfo(index, "institute", v)}
+                      placeholder="Institute Name"
+                    />
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="Group" />
+                    <ReusableInput
+                      error={bad(row.group)}
+                      value={row.group}
+                      onChangeText={(v) => updateEduInfo(index, "group", v)}
+                      placeholder="Name of the Group/Dept."
+                    />
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="Roll" />
+                    <ReusableInput
+                      error={bad(row.roll)}
+                      value={row.roll}
+                      onChangeText={(v) => updateEduInfo(index, "roll", v)}
+                      placeholder="Roll No."
+                      inputType="number"
+                    />
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="Registration" />
+                    <ReusableInput
+                      error={bad(row.registration)}
+                      value={row.registration}
+                      onChangeText={(v) =>
+                        updateEduInfo(index, "registration", v)
+                      }
+                      placeholder="Registration No."
+                      inputType="number"
+                    />
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="G.P.A" />
+                    <ReusableInput
+                      error={bad(row.gpa)}
+                      value={row.gpa}
+                      onChangeText={(v) => updateEduInfo(index, "gpa", v)}
+                      placeholder="GPA"
+                    />
+                  </FormCol>
+                  <FormCol width="third">
+                    <FieldLabel text="Passing Year" />
+                    <ReusableInput
+                      error={bad(row.passingYear)}
+                      value={row.passingYear}
+                      onChangeText={(v) =>
+                        updateEduInfo(index, "passingYear", v)
+                      }
+                      placeholder="Passing Year"
+                      inputType="number"
+                    />
+                  </FormCol>
+                </FormRow>
+              </View>
+            );
+          })}
 
           <View className="mt-3 flex-row">
             <ReusableButton
@@ -2364,7 +2450,7 @@ const SearchableMultiSelectAdapter = ({
 
 /* ================= PREVIEW & PAYMENT TAB ================= */
 // Looks up the application via GET /student-form-preview/{id} and, once
-// found, hands off to the same preview page /autoenroll/admission/preview/[key]
+// found, hands off to the same preview page (onlineadmission/preview/[key])
 // used right after submitting a new application — that page owns the actual
 // form display and payment flow.
 const PreviewPaymentTab = () => {
@@ -2389,9 +2475,10 @@ const PreviewPaymentTab = () => {
         showMessage("error", "Not found", "No application found for this ID.");
         return;
       }
-      router.push(
-        `/autoenroll/admission/preview/${applicationId.trim()}` as any,
-      );
+      router.push({
+        pathname: "/onlineadmission/preview/[key]",
+        params: { key: applicationId.trim() },
+      });
     } catch {
       showMessage("error", "Not found", "No application found for this ID.");
     }
@@ -2572,7 +2659,7 @@ const FullPageSkeleton = () => (
   >
     <View
       className="px-4 pt-4"
-      style={{ maxWidth: 900, width: "100%", alignSelf: "center" }}
+      style={{ maxWidth: 1160, width: "100%", alignSelf: "center" }}
     >
       {/* Institute header card */}
       <View className="flex-row items-center bg-white border border-gray-100 rounded-2xl p-4 mb-4">
@@ -2600,7 +2687,7 @@ const FullPageSkeleton = () => (
 
     <View
       className="p-4"
-      style={{ maxWidth: 900, width: "100%", alignSelf: "center" }}
+      style={{ maxWidth: 1160, width: "100%", alignSelf: "center" }}
     >
       {/* Refresh button */}
       <View className="items-end mb-2">
@@ -2787,7 +2874,7 @@ const AdmissionApplication = () => {
     >
       <View
         className="px-4 pt-4"
-        style={{ maxWidth: 900, width: "100%", alignSelf: "center" }}
+        style={{ maxWidth: 1160, width: "100%", alignSelf: "center" }}
       >
         {instituteDetails && (
           <View className="flex-row items-center bg-white border border-gray-100 rounded-2xl p-4 mb-4">

@@ -983,7 +983,17 @@ const AdmissionPreview = () => {
           }
         >
           <ReusableNotice
-            message={`Admission fee: ${preview?.admission_fee ?? "N/A"}${invoice?.invoice_data?.amount ? ` (Total: ${invoice.invoice_data.amount})` : ""}`}
+            // Same payable-amount computation as the "Application Status" /
+            // Payable Amount cell above — admission fee + software fee, not
+            // admission fee alone.
+            message={`Payable amount: ৳ ${
+              Number(preview?.admission_fee ?? 0) +
+              Number(preview?.software_fee ?? 0)
+            }${
+              preview?.admission_fee != null || preview?.software_fee != null
+                ? ` (Admission Fee: ৳${preview?.admission_fee ?? 0}, Software fee: ৳${preview?.software_fee ?? 0})`
+                : ""
+            }`}
             icon="cash-outline"
             containerClassName="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-3"
             textClassName="text-blue-800"
