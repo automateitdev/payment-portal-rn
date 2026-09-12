@@ -4,7 +4,7 @@ import { useAppSelector } from "@/redux/hook";
 
 import { RootState } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Slot, Tabs, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ColorValue,
@@ -56,6 +56,7 @@ const TabIcon = ({
 const AppLayout = () => {
   const { user, token } = useAppSelector((state: RootState) => state.auth);
   const themeMode = useAppSelector((state: RootState) => state.theme.mode);
+  const pathname = usePathname();
   const isDark = themeMode === "dark";
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
@@ -74,7 +75,17 @@ const AppLayout = () => {
   }, [isDark]);
 
   if (!user || !token) {
-    return <Redirect href="/(auth)/login" />;
+    // Open Payment / Online Admission are "no login required" flows — let
+    // guests through to those routes only, rendered bare (no tab bar /
+    // sidebar).
+    if (
+      pathname?.startsWith("/open-payment") ||
+      pathname?.startsWith("/onlineadmission") ||
+      pathname?.startsWith("/payments/available_payment")
+    ) {
+      return <Slot />;
+    }
+    return <Redirect href="/landing" />;
   }
 
   // Web Layout
@@ -89,6 +100,16 @@ const AppLayout = () => {
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen
           name="payments/available_payment/available_payment"
+          options={{ href: null }}
+        />
+        <Tabs.Screen name="open-payment/index" options={{ href: null }} />
+        <Tabs.Screen
+          name="open-payment/[instituteId]"
+          options={{ href: null }}
+        />
+        <Tabs.Screen name="onlineadmission/index" options={{ href: null }} />
+        <Tabs.Screen
+          name="onlineadmission/[instituteId]"
           options={{ href: null }}
         />
         <Tabs.Screen
@@ -231,6 +252,31 @@ const AppLayout = () => {
               />
             ),
           }}
+        />
+        <Tabs.Screen
+          name="open-payment/index"
+          options={{
+            title: "Open Payment",
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                name={focused ? "card" : "card-outline"}
+                size={size}
+                color={color}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="open-payment/[instituteId]"
+          options={{ href: null }}
+        />
+        {/* Online Admission is a guest-only flow (landing page) — routes
+            registered but kept out of the logged-in tab bar. */}
+        <Tabs.Screen name="onlineadmission/index" options={{ href: null }} />
+        <Tabs.Screen
+          name="onlineadmission/[instituteId]"
+          options={{ href: null }}
         />
         <Tabs.Screen
           name="payments/invoices/invoices"

@@ -14,6 +14,7 @@ const menuItems = [
     icon: "wallet",
     to: "/payments/available_payment/available_payment",
   },
+  { label: "Open Payment", icon: "card", to: "/open-payment" },
   { label: "Invoices", icon: "receipt", to: "/payments/invoices/invoices" },
   {
     label: "Exams",

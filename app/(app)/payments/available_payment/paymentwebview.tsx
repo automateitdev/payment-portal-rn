@@ -34,9 +34,11 @@ const parseQueryParams = (url: string): Record<string, string> => {
 const PaymentWebView = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
-    payment_url: string;
-    transaction_id: string;
-    amount: string;
+    payment_url?: string;
+    transaction_id?: string;
+    amount?: string;
+    html_content?: string;
+    html?: string;
   }>();
 
   const webViewRef = useRef<WebView>(null);
@@ -44,7 +46,8 @@ const PaymentWebView = () => {
   const [_canGoBack, setCanGoBack] = useState(false);
   const hasNavigatedRef = useRef(false);
 
-  const { payment_url, transaction_id, amount } = params;
+  const { payment_url, transaction_id, amount, html_content, html } = params;
+  const rawHtml = html_content || html;
 
   // Check payment status periodically if needed
   // const { data: paymentStatus, refetch } = useCheckPaymentStatusQuery(
@@ -64,6 +67,11 @@ const PaymentWebView = () => {
     }
 
     const currentUrl = navState.url;
+    if (!currentUrl || currentUrl === "about:blank" || currentUrl === payment_url) {
+      setLoading(navState.loading);
+      return;
+    }
+
     const lowerUrl = currentUrl.toLowerCase();
     const queryParams = parseQueryParams(currentUrl);
 
@@ -104,7 +112,9 @@ const PaymentWebView = () => {
       <View className="flex-1">
         <WebView
           ref={webViewRef}
-          source={{ uri: payment_url }}
+          source={
+            rawHtml ? { html: rawHtml } : { uri: payment_url || "about:blank" }
+          }
           onNavigationStateChange={handleNavigationStateChange}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}

@@ -6,6 +6,7 @@ import { setUser } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -61,7 +62,16 @@ const LoginScreen = () => {
 
   const [loginUser, { isLoading }] = useLoginUserMutation();
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/landing");
+    }
+  };
 
   const socials = [
     {
@@ -102,6 +112,32 @@ const LoginScreen = () => {
   const openLink = (url: string) => {
     Linking.openURL(url).catch(() => console.log("Error opening link"));
   };
+
+  const renderBackButton = (variant: "light" | "dark" = "light") => (
+    <TouchableOpacity
+      onPress={handleBack}
+      activeOpacity={0.75}
+      style={[
+        styles.backButton,
+        variant === "dark" && styles.backButtonOnDark,
+      ]}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Ionicons
+        name="arrow-back"
+        size={16}
+        color={variant === "dark" ? "#BBF7D0" : "#16A34A"}
+      />
+      <Text
+        style={[
+          styles.backButtonText,
+          variant === "dark" && styles.backButtonTextOnDark,
+        ]}
+      >
+        Payment Portal
+      </Text>
+    </TouchableOpacity>
+  );
 
   const renderForm = (variant: "light" | "dark" = "light") => (
     <View>
@@ -382,6 +418,9 @@ const LoginScreen = () => {
 
           <View style={styles.webFormPanel}>
             <View style={styles.webFormInner}>
+              <View style={{ marginBottom: 18 }}>
+                {renderBackButton("light")}
+              </View>
               <Text style={styles.webFormEyebrow}>Welcome back</Text>
               <Text style={styles.webFormTitle}>Log in to continue</Text>
               <View style={{ marginTop: 28 }}>{renderForm("light")}</View>
@@ -408,6 +447,9 @@ const LoginScreen = () => {
         <View style={styles.heroGlowTopRight} pointerEvents="none" />
         <View style={styles.heroGlowBottomLeft} pointerEvents="none" />
         <SafeAreaView edges={["top"]}>
+          <View style={{ marginTop: 14, marginBottom: 4 }}>
+            {renderBackButton("dark")}
+          </View>
           <View style={styles.mobileHeroLogoRing}>
             <View style={styles.mobileHeroLogo}>
               <Ionicons name="wallet" size={24} color="#052E1F" />
@@ -442,6 +484,26 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  // ---- back button ----
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#DCFCE7",
+  },
+  backButtonOnDark: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  backButtonText: { fontSize: 12, fontWeight: "700", color: "#16A34A" },
+  backButtonTextOnDark: { color: "#BBF7D0" },
+
   // ---- shared / mobile ----
   mobilePage: { flex: 1, backgroundColor: "#062E1F" },
   mobileHero: {

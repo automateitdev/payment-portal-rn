@@ -15,9 +15,9 @@ export const baseApi = createApi({
         }
       }
 
-      // You can also set Content-Type or other headers
-      headers.set("Content-Type", "application/json");
-
+      // RTK Query automatically sets "Content-Type": "application/json" for JSON requests.
+      // Leaving it unset here ensures React Native can automatically set
+      // "multipart/form-data; boundary=..." for FormData uploads.
       return headers;
     },
   }),
@@ -29,6 +29,7 @@ export const baseApi = createApi({
     "Payable",
     "GeneralConfigs",
     "Notifications",
+    "FeeAmount",
   ],
 
   endpoints: () => ({}),
