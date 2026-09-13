@@ -9,15 +9,21 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import React, { useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { showMessage } from "../shared/CustomToast/message";
 import {
   useGetOpenPaymentInfoQuery,
   useLazyGetOpenPaymentInvoicesQuery,
 } from "@/redux/allApi/openpayment/openPaymentApi";
 import { normalizeApiError } from "../utils/errorNormalizer";
-import ReusableTable, { TableColumn } from "../shared/Table/ReusableTable";
 import ReusableInput from "../shared/ReusableInput";
+import ReusablePagination from "../shared/ReusablePagination";
 
 /* ------------------------------ number → words ------------------------------ */
 const ones = [
@@ -247,7 +253,7 @@ const InvoicesTab = ({ instituteId }: { instituteId: string }) => {
   const [hasSearched, setHasSearched] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    pageSize: 25,
+    pageSize: 10,
   });
 
   const { data: infoRes } = useGetOpenPaymentInfoQuery(
@@ -354,112 +360,17 @@ const InvoicesTab = ({ instituteId }: { instituteId: string }) => {
     }
   };
 
-  const columns: TableColumn<any>[] = [
-    {
-      id: "name",
-      name: "Name",
-      minWidth: 140,
-      render: (item) => (
-        <Text className="text-gray-700">
-          {item.student?.name || item.applicant_name || "—"}
-        </Text>
-      ),
-    },
-    {
-      id: "student_id",
-      name: "Student ID",
-      width: 120,
-      render: (item) => (
-        <Text className="text-gray-700">{item.student?.student_id || "—"}</Text>
-      ),
-    },
-    {
-      id: "fee_head",
-      name: "Fee Head",
-      minWidth: 130,
-      render: (item) => (
-        <Text className="text-gray-700">{item.setup?.fee_head || "—"}</Text>
-      ),
-    },
-    {
-      id: "base",
-      name: "Base Amt",
-      width: 100,
-      textAlign: "center",
-      render: (item) => (
-        <Text className="text-center text-gray-700">
-          {fmt(item.base_amount)}
-        </Text>
-      ),
-    },
-    {
-      id: "paid",
-      name: "Total Paid",
-      width: 100,
-      textAlign: "center",
-      render: (item) => (
-        <Text className="text-center font-bold text-gray-800">
-          {fmt(item.pay_amount)}
-        </Text>
-      ),
-    },
-    {
-      id: "gateway",
-      name: "Gateway",
-      width: 90,
-      textAlign: "center",
-      render: (item) => (
-        <Text className="text-center text-gray-700">
-          {item.payment_gateway || "—"}
-        </Text>
-      ),
-    },
-    {
-      id: "status",
-      name: "Status",
-      width: 120,
-      textAlign: "center",
-      render: (item) => {
-        const done = item.payment_state === "COMPLETED";
-        return (
-          <View
-            className={`self-center px-2.5 py-1 rounded-full ${done ? "bg-green-100" : "bg-amber-100"}`}
-          >
-            <Text
-              className={`text-[11px] font-bold ${done ? "text-green-700" : "text-amber-700"}`}
-            >
-              {item.payment_state || "—"}
-            </Text>
-          </View>
-        );
-      },
-    },
-    {
-      id: "date",
-      name: "Payment Date",
-      width: 150,
-      render: (item) => (
-        <Text className="text-gray-700">{item.payment_date || "—"}</Text>
-      ),
-    },
-    {
-      id: "receipt",
-      name: "Receipt",
-      width: 80,
-      textAlign: "center",
-      render: (item) =>
-        item.payment_state === "COMPLETED" ? (
-          <TouchableOpacity
-            onPress={() => handleDownload(item)}
-            className="self-center h-9 w-9 items-center justify-center rounded-lg bg-lime-50"
-          >
-            <Ionicons name="download-outline" size={18} color="#4d7c0f" />
-          </TouchableOpacity>
-        ) : (
-          <Text className="text-center text-gray-300">—</Text>
-        ),
-    },
-  ];
+  const totalRecords = invoices.length;
+  const totalPages = Math.ceil(totalRecords / pagination.pageSize) || 1;
+  const from =
+    totalRecords === 0
+      ? 0
+      : (pagination.currentPage - 1) * pagination.pageSize + 1;
+  const to = Math.min(pagination.currentPage * pagination.pageSize, totalRecords);
+  const paginatedInvoices = invoices.slice(
+    (pagination.currentPage - 1) * pagination.pageSize,
+    pagination.currentPage * pagination.pageSize,
+  );
 
   return (
     <View>
@@ -487,27 +398,204 @@ const InvoicesTab = ({ instituteId }: { instituteId: string }) => {
         />
       </View>
 
-      {hasSearched && (
-        <ReusableTable
-          data={invoices}
-          columns={columns}
-          loading={isFetching}
-          emptyMessage="No invoices found"
-          showZebra
-          pagination={{
-            totalRecords: invoices.length,
-            currentPage: pagination.currentPage,
-            pageSize: pagination.pageSize,
-            onPageChange: (page) =>
-              setPagination((p) => ({ ...p, currentPage: page })),
-            onPageSizeChange: (size) =>
-              setPagination({ currentPage: 1, pageSize: size }),
-            rowsPerPageOptions: [25, 50, 100, 200, 500, 1000],
-          }}
-        />
+      {/* Invoices List View */}
+      {isFetching && (
+        <View className="py-12 items-center justify-center bg-slate-50/50 rounded-2xl border border-slate-100 mb-4">
+          <ActivityIndicator size="small" color="#059669" />
+          <Text className="text-xs text-slate-500 font-medium mt-2">
+            Searching invoices...
+          </Text>
+        </View>
+      )}
+
+      {!isFetching && hasSearched && invoices.length === 0 && (
+        <View className="py-12 items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 mb-4">
+          <View className="w-12 h-12 rounded-full bg-slate-100 items-center justify-center mb-2.5">
+            <Ionicons name="documents-outline" size={22} color="#94a3b8" />
+          </View>
+          <Text className="text-sm font-semibold text-slate-700">
+            No invoices found
+          </Text>
+          <Text className="text-xs text-slate-400 mt-0.5">
+            Try searching with a different invoice no. or mobile number.
+          </Text>
+        </View>
+      )}
+
+      {!isFetching && hasSearched && invoices.length > 0 && (
+        <View className="gap-4 mb-5">
+          {paginatedInvoices.map((item, idx) => {
+            const isCompleted = item.payment_state === "COMPLETED";
+
+            return (
+              <View
+                key={item.id || item.invoice || idx}
+                className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm"
+                style={{
+                  shadowColor: "#0f172a",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 10,
+                  elevation: 2,
+                }}
+              >
+                {/* Card Header: Invoice & Status */}
+                <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+                  <View className="flex-row items-center gap-2.5">
+                    <View className="w-9 h-9 rounded-xl bg-emerald-50 items-center justify-center border border-emerald-100/50">
+                      <Ionicons
+                        name="receipt-outline"
+                        size={18}
+                        color="#059669"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">
+                        Invoice No
+                      </Text>
+                      <Text className="text-sm font-bold text-slate-800">
+                        {item.invoice || "—"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    className={`px-3 py-1 rounded-full ${
+                      isCompleted ? "bg-emerald-50 border border-emerald-200/60" : "bg-amber-50 border border-amber-200/60"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[11px] font-bold ${
+                        isCompleted ? "text-emerald-700" : "text-amber-700"
+                      }`}
+                    >
+                      {item.payment_state || "—"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Card Details Grid */}
+                <View className="py-3 gap-2.5">
+                  {/* Row 1: Name & Student ID */}
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-[11px] text-slate-400 font-medium">
+                        Student Name
+                      </Text>
+                      <Text className="text-[13px] font-bold text-slate-700 mt-0.5">
+                        {item.student?.name || item.applicant_name || "—"}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-[11px] text-slate-400 font-medium">
+                        Student ID
+                      </Text>
+                      <Text className="text-[13px] font-bold text-slate-700 mt-0.5">
+                        {item.student?.student_id || "—"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Row 2: Fee Head & Gateway */}
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-[11px] text-slate-400 font-medium">
+                        Fee Head
+                      </Text>
+                      <Text className="text-[13px] text-slate-700 mt-0.5">
+                        {item.setup?.fee_head || "—"}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-[11px] text-slate-400 font-medium">
+                        Gateway
+                      </Text>
+                      <Text className="text-[13px] text-slate-700 mt-0.5">
+                        {item.payment_gateway || "—"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Row 3: Payment Date */}
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                      <Text className="text-[11px] text-slate-400 font-medium">
+                        Payment Date
+                      </Text>
+                      <Text className="text-[12px] text-slate-600 mt-0.5">
+                        {item.payment_date || "—"}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Card Footer: Base Amount & Download CTA */}
+                <View className="pt-3 border-t border-slate-100 flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-[11px] text-slate-400 font-semibold tracking-wide uppercase">
+                      Base Amount
+                    </Text>
+                    <Text className="text-base font-extrabold text-emerald-600 mt-0.5">
+                      ৳ {fmt(item.base_amount)}
+                    </Text>
+                  </View>
+
+                  {isCompleted ? (
+                    <TouchableOpacity
+                      onPress={() => handleDownload(item)}
+                      className="flex-row items-center gap-1.5 px-3.5 py-2 bg-emerald-600 rounded-xl active:bg-emerald-700"
+                      style={{
+                        shadowColor: "#059669",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }}
+                    >
+                      <Ionicons
+                        name="download-outline"
+                        size={15}
+                        color="#ffffff"
+                      />
+                      <Text className="text-xs font-bold text-white">
+                        Receipt
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text className="text-xs text-slate-400 italic">
+                      Receipt unavailable
+                    </Text>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Pagination */}
+          {totalRecords > pagination.pageSize && (
+            <View className="rounded-2xl border border-slate-200 overflow-hidden mt-1">
+              <ReusablePagination
+                currentPage={pagination.currentPage}
+                totalRecords={totalRecords}
+                pageSize={pagination.pageSize}
+                from={from}
+                to={to}
+                totalPages={totalPages}
+                onPageChange={(page) =>
+                  setPagination((p) => ({ ...p, currentPage: page }))
+                }
+                onPageSizeChange={(size) =>
+                  setPagination({ currentPage: 1, pageSize: size })
+                }
+                rowsPerPageOptions={[10, 25, 50, 100]}
+              />
+            </View>
+          )}
+        </View>
       )}
     </View>
   );
 };
 
 export default InvoicesTab;
+

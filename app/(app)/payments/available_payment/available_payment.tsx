@@ -149,19 +149,27 @@ const AvailablePayment = () => {
   useEffect(() => {
     if (feeHeads.length > 0 && student_online_payment_setting) {
       const today = dayjs().format("YYYY-MM-DD");
+      const isDueUptoCurrentDate =
+        student_online_payment_setting?.toLowerCase() ===
+        "due upto current date";
       const newAutoSelected: { [key: number]: FeeSubhead[] } = {};
       const newSelected: { [key: number]: FeeSubhead[] } = {};
 
       feeHeads.forEach((feeHead) => {
-        const autoSelected = feeHead.fee_subheads.filter(
+        const dueSubheads = feeHead.fee_subheads.filter(
           (subhead) =>
             subhead.payable_date &&
             (dayjs(subhead.payable_date).isSame(today, "day") ||
               dayjs(subhead.payable_date).isBefore(today, "day")),
         );
 
-        newAutoSelected[feeHead.id] = autoSelected;
-        newSelected[feeHead.id] = [...autoSelected];
+        if (isDueUptoCurrentDate) {
+          newAutoSelected[feeHead.id] = dueSubheads;
+          newSelected[feeHead.id] = [...dueSubheads];
+        } else {
+          newAutoSelected[feeHead.id] = [];
+          newSelected[feeHead.id] = [...dueSubheads];
+        }
       });
 
       setAutoSelectedSubheads(newAutoSelected);
@@ -276,18 +284,22 @@ const AvailablePayment = () => {
     subhead: FeeSubhead,
     isSelected: boolean,
   ) => {
+    const isDueUptoCurrentDate =
+      student_online_payment_setting?.toLowerCase() === "due upto current date";
     const currentSelected = selectedFeesubheads[feeHeadId] || [];
-    const autoSelected = autoSelectedSubheads[feeHeadId] || [];
+    const autoSelected = isDueUptoCurrentDate
+      ? autoSelectedSubheads[feeHeadId] || []
+      : [];
     const isAutoSelected = autoSelected.some(
       (item) => item.payapplies_id === subhead.payapplies_id,
     );
 
-    // If it's auto-selected, don't allow deselecting
+    // If it's auto-selected in due upto current date, don't allow deselecting
     if (isAutoSelected && !isSelected) {
       return;
     }
 
-    let newSelected;
+    let newSelected: FeeSubhead[];
     if (isSelected) {
       newSelected = [...currentSelected, subhead];
     } else {
@@ -296,21 +308,28 @@ const AvailablePayment = () => {
       );
     }
 
-    // Ensure auto-selected items are always included
-    const finalSelected = [
-      ...newSelected.filter(
-        (item) =>
-          !autoSelected.some(
-            (auto) => auto.payapplies_id === item.payapplies_id,
-          ),
-      ),
-      ...autoSelected,
-    ];
+    if (isDueUptoCurrentDate) {
+      // Ensure auto-selected items are always included in due upto current date mode
+      const finalSelected = [
+        ...newSelected.filter(
+          (item) =>
+            !autoSelected.some(
+              (auto) => auto.payapplies_id === item.payapplies_id,
+            ),
+        ),
+        ...autoSelected,
+      ];
 
-    setSelectedFeesubheads((prev) => ({
-      ...prev,
-      [feeHeadId]: finalSelected,
-    }));
+      setSelectedFeesubheads((prev) => ({
+        ...prev,
+        [feeHeadId]: finalSelected,
+      }));
+    } else {
+      setSelectedFeesubheads((prev) => ({
+        ...prev,
+        [feeHeadId]: newSelected,
+      }));
+    }
   };
 
   const handlePartialPaymentChange = (
@@ -344,6 +363,11 @@ const AvailablePayment = () => {
   };
 
   const isLockedRow = (feeHeadId: number, subhead: FeeSubhead) => {
+    if (
+      student_online_payment_setting?.toLowerCase() !== "due upto current date"
+    ) {
+      return false;
+    }
     return autoSelectedSubheads[feeHeadId]?.some(
       (item) => item?.payapplies_id === subhead?.payapplies_id,
     );
@@ -729,10 +753,7 @@ const AvailablePayment = () => {
                     subhead.payapplies_id.toString()
                   }
                   renderItem={({ item: subhead }: { item: FeeSubhead }) => {
-                    const isLocked = autoSelectedSubheads[item.id]?.some(
-                      (autoItem) =>
-                        autoItem.payapplies_id === subhead.payapplies_id,
-                    );
+                    const isLocked = isLockedRow(item.id, subhead);
                     const isSelected = selectedSubheads.some(
                       (s) => s.payapplies_id === subhead.payapplies_id,
                     );

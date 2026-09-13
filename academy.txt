@@ -1,11 +1,10 @@
 {
   "expo": {
-    "name": "RKEMSPay",
-    "slug": "RKEMSPay",
+    "name": "AutoPay",
+    "slug": "AutoPay",
     "version": "1.0.0",
-    "owner": "jimrks-team",
     "orientation": "portrait",
-    "icon": "./assets/images/ricon.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "paymentportal",
     "userInterfaceStyle": "automatic",
     "platforms": ["android", "web"],
@@ -13,26 +12,26 @@
       "fallbackToCacheTimeout": 0,
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "url": "https://u.expo.dev/74d11724-93a8-44e9-99ae-775aaf003355"
+      "url": "https://u.expo.dev/e8b05647-0993-4b0c-8a4e-b9afcdc8478a"
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
     "ios": {
       "infoPlist": {
-        "CFBundleDisplayName": "RKEMSPay"
+        "CFBundleDisplayName": "AutoPay"
       },
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/ricon.png",
-        "backgroundImage": "./assets/images/ricon.png",
-        "monochromeImage": "./assets/images/ricon.png"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundImage": "./assets/images/icon.png",
+        "monochromeImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "emspay.rksoftbd.com",
+      "package": "pay.academyims.com",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -57,7 +56,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/rsplash-icon.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -82,7 +81,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "74d11724-93a8-44e9-99ae-775aaf003355"
+        "projectId": "e8b05647-0993-4b0c-8a4e-b9afcdc8478a"
       }
     }
   }
