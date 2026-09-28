@@ -2,6 +2,7 @@ import { logout } from "@/redux/feature/authSlice";
 import { toggleTheme } from "@/redux/feature/themeSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { RootState } from "@/redux/store";
+import { APP_NAME } from "@/utils/vendor";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
@@ -39,7 +40,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <Ionicons name="wallet" size={24} color="white" />
         </View>
         <Text className="ml-3 text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
-          AutoPay
+          {APP_NAME}
         </Text>
       </View>
 
@@ -61,11 +62,10 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 onNavigate?.();
               }}
               activeOpacity={0.7}
-              className={`flex-row items-center p-4 rounded-2xl mb-1 ${
-                isActive
-                  ? "bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20"
-                  : "border border-transparent"
-              }`}
+              className={`flex-row items-center p-4 rounded-2xl mb-1 ${isActive
+                ? "bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20"
+                : "border border-transparent"
+                }`}
             >
               <View
                 className={`${isActive ? "bg-emerald-500" : "bg-slate-100 dark:bg-slate-800"} p-1.5 rounded-lg mr-3`}

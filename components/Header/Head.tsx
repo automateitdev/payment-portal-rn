@@ -9,6 +9,7 @@ import { logout } from "@/redux/feature/authSlice";
 import { toggleTheme } from "@/redux/feature/themeSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { RootState } from "@/redux/store";
+import { APP_PREFIX, APP_SUFFIX } from "@/utils/vendor";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -99,7 +100,7 @@ const Head: React.FC<Props> = ({ onMorePress }) => {
       {/* LEFT - Just Logo */}
       <View className="flex-row items-center">
         <Text className="text-2xl font-black tracking-tighter text-slate-950 dark:text-white">
-          Auto<Text className="text-green-600">Pay</Text>
+          {APP_PREFIX}<Text className="text-green-600">{APP_SUFFIX}</Text>
         </Text>
       </View>
 

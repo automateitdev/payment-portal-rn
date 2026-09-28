@@ -10,6 +10,7 @@ import {
   getReceiptTemplateKind,
 } from "@/utils/receipt/moneyReceiptHtml";
 import { showToast } from "@/utils/toast";
+import { VENDOR_SYSTEM_NAME_DASH } from "@/utils/vendor";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1574,7 +1575,7 @@ function RichReceiptPreview({
         >
           <Text className="text-[11px] text-slate-500">
             <Text className="font-bold text-slate-700">Powered By:</Text>{" "}
-            Academy-Institute Management System
+            {VENDOR_SYSTEM_NAME_DASH}
           </Text>
           <Text className="text-[11px] text-slate-500">
             <Text className="font-bold text-slate-700">Note:</Text> This Money
@@ -1757,7 +1758,7 @@ function SimpleReceiptPreview({
 
         <Text className="text-[11px] text-slate-500 mt-2">
           <Text className="font-bold text-slate-700">Powered By:</Text>{" "}
-          Academy-Institute Management System
+          {VENDOR_SYSTEM_NAME_DASH}
         </Text>
       </View>
     </View>

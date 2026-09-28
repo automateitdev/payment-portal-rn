@@ -2,6 +2,7 @@ import InstituteLookupForm from "@/components/OpenPayment/InstituteLookupForm";
 import { useAppSelector } from "@/redux/hook";
 import { RootState } from "@/redux/store";
 import { colors, gradients } from "@/theme/colors";
+import { SECURED_BY_TEXT } from "@/utils/vendor";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -166,7 +167,7 @@ const OnlineAdmissionEntry = () => {
                   color={isDark ? "#64748b" : "#94a3b8"}
                 />
                 <Text className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                  Secured by Academy Institute Management System
+                  {SECURED_BY_TEXT}
                 </Text>
               </View>
             </View>

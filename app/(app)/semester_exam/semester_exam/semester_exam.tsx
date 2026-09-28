@@ -8,6 +8,7 @@ import {
 } from "@/redux/allApi/semesterExam/semesterExamApi";
 import { useAppSelector } from "@/redux/hook";
 import { Feather } from "@expo/vector-icons";
+import { POWERED_BY_SOFTWARE_TEXT } from "@/utils/vendor";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import QRCode from "qrcode";
@@ -1184,7 +1185,7 @@ GPA: ${transcript.gpaWithOptional}`;
 
 
             <div class="powered">
-              <div>Powered By: Academy-Institute Management Software</div>
+              <div>${escapeHtml(POWERED_BY_SOFTWARE_TEXT)}</div>
               <div>Published: ${escapeHtml(new Date().toLocaleString("en-US"))}</div>
             </div>
           </div>
@@ -2869,8 +2870,8 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 //             </div>
 
 //             <div class="powered">
-//               <div>Powered By: Academy-Institute Management Software</div>
-//               <div>Published: ${escapeHtml(new Date().toLocaleString("en-US"))}</div>
+//               <div>\${escapeHtml(POWERED_BY_SOFTWARE_TEXT)}</div>
+//               <div>Published: \${escapeHtml(new Date().toLocaleString("en-US"))}</div>
 //             </div>
 //           </div>
 //         </div>

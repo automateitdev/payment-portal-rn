@@ -4,6 +4,7 @@ import { useLoginUserMutation } from "@/redux/allApi/authApi/authApi";
 import { baseApi } from "@/redux/baseApi/baseApi";
 import { setUser } from "@/redux/feature/authSlice";
 import { useAppDispatch } from "@/redux/hook";
+import { isRKEMS, VENDOR_NAME } from "@/utils/vendor";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -283,89 +284,97 @@ const LoginScreen = () => {
     </View>
   );
 
-  const renderVideo = (variant: "light" | "dark" = "light") => (
-    <View
-      style={[styles.videoCard, variant === "dark" && styles.videoCardOnDark]}
-    >
-      <View style={styles.videoCardHeader}>
-        <View style={styles.videoPlayBadge}>
-          <Ionicons name="play" size={11} color="white" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={[
-              styles.videoCardTitle,
-              variant === "dark" && styles.videoCardTitleOnDark,
-            ]}
-          >
-            New here? Watch this
-          </Text>
-          <Text
-            style={[
-              styles.videoCardSub,
-              variant === "dark" && styles.videoCardSubOnDark,
-            ]}
-          >
-            A quick walkthrough of the payment process
-          </Text>
-        </View>
-      </View>
-      <View style={styles.videoFrame}>
-        <YoutubeIframe
-          height={videoHeight}
-          width={videoWidth}
-          play={isPlaying}
-          videoId={"f3k_AE_J_kk"}
-        />
-      </View>
-    </View>
-  );
+  const vendorName = VENDOR_NAME;
 
-  const renderSocials = (variant: "light" | "dark" = "light") => (
-    <View style={styles.socialsBlock}>
-      <View style={styles.socialsDividerRow}>
-        <View
-          style={[
-            styles.socialsDivider,
-            variant === "dark" && styles.socialsDividerOnDark,
-          ]}
-        />
-        <Text
-          style={[
-            styles.socialsLabel,
-            variant === "dark" && styles.socialsLabelOnDark,
-          ]}
-        >
-          Need assistance? Reach us
-        </Text>
-        <View
-          style={[
-            styles.socialsDivider,
-            variant === "dark" && styles.socialsDividerOnDark,
-          ]}
-        />
+  const renderVideo = (variant: "light" | "dark" = "light") => {
+    if (isRKEMS) return null;
+    return (
+      <View
+        style={[styles.videoCard, variant === "dark" && styles.videoCardOnDark]}
+      >
+        <View style={styles.videoCardHeader}>
+          <View style={styles.videoPlayBadge}>
+            <Ionicons name="play" size={11} color="white" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.videoCardTitle,
+                variant === "dark" && styles.videoCardTitleOnDark,
+              ]}
+            >
+              New here? Watch this
+            </Text>
+            <Text
+              style={[
+                styles.videoCardSub,
+                variant === "dark" && styles.videoCardSubOnDark,
+              ]}
+            >
+              A quick walkthrough of the payment process
+            </Text>
+          </View>
+        </View>
+        <View style={styles.videoFrame}>
+          <YoutubeIframe
+            height={videoHeight}
+            width={videoWidth}
+            play={isPlaying}
+            videoId={"f3k_AE_J_kk"}
+          />
+        </View>
       </View>
-      <View style={styles.socialsRow}>
-        {socials.map((s) => (
-          <TouchableOpacity
-            key={s.icon}
-            onPress={() => openLink(s.url)}
-            activeOpacity={0.75}
+    );
+  };
+
+  const renderSocials = (variant: "light" | "dark" = "light") => {
+    if (isRKEMS) return null;
+    return (
+      <View style={styles.socialsBlock}>
+        <View style={styles.socialsDividerRow}>
+          <View
             style={[
-              styles.socialPill,
-              variant === "dark" && styles.socialPillOnDark,
+              styles.socialsDivider,
+              variant === "dark" && styles.socialsDividerOnDark,
+            ]}
+          />
+          <Text
+            style={[
+              styles.socialsLabel,
+              variant === "dark" && styles.socialsLabelOnDark,
             ]}
           >
-            <Ionicons
-              name={s.icon as any}
-              size={16}
-              color={variant === "dark" ? "#BBF7D0" : "#16A34A"}
-            />
-          </TouchableOpacity>
-        ))}
+            Need assistance? Reach us
+          </Text>
+          <View
+            style={[
+              styles.socialsDivider,
+              variant === "dark" && styles.socialsDividerOnDark,
+            ]}
+          />
+        </View>
+        <View style={styles.socialsRow}>
+          {socials.map((s) => (
+            <TouchableOpacity
+              key={s.icon}
+              onPress={() => openLink(s.url)}
+              activeOpacity={0.75}
+              style={[
+                styles.socialPill,
+                variant === "dark" && styles.socialPillOnDark,
+              ]}
+            >
+              <Ionicons
+                name={s.icon as any}
+                size={16}
+                color={variant === "dark" ? "#BBF7D0" : "#16A34A"}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // ---------------------------------------------------------------------
   // Web / large-screen layout: dark branding rail + light form panel
@@ -388,7 +397,7 @@ const LoginScreen = () => {
               <View style={styles.webLogoBadge}>
                 <Ionicons name="wallet" size={22} color="#052E1F" />
               </View>
-              <Text style={styles.webBrandName}>ACADEMY PORTAL</Text>
+              <Text style={styles.webBrandName}>{vendorName} Portal</Text>
             </View>
 
             <View style={{ marginTop: 34 }}>
@@ -413,7 +422,7 @@ const LoginScreen = () => {
               </View>
             </View>
 
-            {renderVideo("dark")}
+            {!isRKEMS && renderVideo("dark")}
           </LinearGradient>
 
           <View style={styles.webFormPanel}>
@@ -424,7 +433,7 @@ const LoginScreen = () => {
               <Text style={styles.webFormEyebrow}>Welcome back</Text>
               <Text style={styles.webFormTitle}>Log in to continue</Text>
               <View style={{ marginTop: 28 }}>{renderForm("light")}</View>
-              {renderSocials("light")}
+              {!isRKEMS && renderSocials("light")}
             </View>
           </View>
         </View>
@@ -455,7 +464,9 @@ const LoginScreen = () => {
               <Ionicons name="wallet" size={24} color="#052E1F" />
             </View>
           </View>
-          <Text style={styles.mobileHeroEyebrow}>ACADEMY PAYMENT PORTAL</Text>
+          <Text style={styles.mobileHeroEyebrow}>
+            {vendorName} Payment Portal
+          </Text>
           <Text style={styles.mobileHeroTitle}>Welcome back</Text>
           <Text style={styles.mobileHeroSubtitle}>
             Log in to manage your academic fees and payments.
@@ -474,8 +485,10 @@ const LoginScreen = () => {
           >
             <View style={styles.sheetHandle} />
             {renderForm("light")}
-            <View style={{ marginTop: 24 }}>{renderVideo("light")}</View>
-            {renderSocials("light")}
+            {!isRKEMS && (
+              <View style={{ marginTop: 24 }}>{renderVideo("light")}</View>
+            )}
+            {!isRKEMS && renderSocials("light")}
           </KeyboardAvoidingView>
         </ScrollView>
       </View>

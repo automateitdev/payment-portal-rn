@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import { useAppSelector } from "@/redux/hook";
 
 import { RootState } from "@/redux/store";
+import { APP_NAME } from "@/utils/vendor";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Slot, Tabs, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
@@ -172,7 +173,7 @@ const AppLayout = () => {
                 <Ionicons name="wallet" size={18} color="white" />
               </View>
               <Text className="ml-2 text-lg font-black text-slate-900 dark:text-white tracking-tighter">
-                AutoPay
+                {APP_NAME}
               </Text>
             </View>
           </View>

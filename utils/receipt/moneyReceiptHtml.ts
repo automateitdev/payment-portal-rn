@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import QRCode from "qrcode";
+import { VENDOR_SYSTEM_NAME_DASH } from "@/utils/vendor";
 
 export type MoneyReceiptRow = {
   academicYear: string;
@@ -312,7 +313,7 @@ const buildSimpleBlock = (
         <tr><td class="label">Collected By</td><td>: ${escapeHtml(receipt.collectedBy)}</td><td class="no-sign">No need to sign</td></tr>
       </table>
 
-      <div class="simple-powered">Powered By: Academy-Institute Management System</div>
+      <div class="simple-powered">Powered By: ${escapeHtml(VENDOR_SYSTEM_NAME_DASH)}</div>
     </div>
   `;
 };
@@ -444,7 +445,7 @@ const buildRichBlock = (
       </table>
 
       <div class="footer">
-        <div><strong>Powered By:</strong> Academy-Institute Management System</div>
+        <div><strong>Powered By:</strong> ${escapeHtml(VENDOR_SYSTEM_NAME_DASH)}</div>
         <div><strong>Note:</strong> This Money Receipt was created on a software.</div>
       </div>
     </div>

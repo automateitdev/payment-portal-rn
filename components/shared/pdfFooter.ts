@@ -6,10 +6,9 @@
  * changing the brand in the future requires editing only this file.
  */
 
-const VENDOR = process.env.EXPO_PUBLIC_VENDOR || "Academy";
-const PRODUCT_SUFFIX = "Institute Management Software";
+import { VENDOR_SOFTWARE_NAME } from "@/utils/vendor";
 
-export const PDF_FOOTER_BRAND = `${VENDOR}-${PRODUCT_SUFFIX}`;
+export const PDF_FOOTER_BRAND = VENDOR_SOFTWARE_NAME;
 
 /**
  * Height reserved for the footer at the bottom of every printed page.
