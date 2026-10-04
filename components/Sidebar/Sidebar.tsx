@@ -23,6 +23,11 @@ const menuItems = [
     icon: "document-text",
     to: "/semester_exam/semester_exam/semester_exam",
   },
+  {
+    label: "Apply Leave",
+    icon: "calendar",
+    to: "/apply-leave",
+  },
 ];
 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
