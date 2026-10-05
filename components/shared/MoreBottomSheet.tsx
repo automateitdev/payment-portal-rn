@@ -31,14 +31,14 @@ interface MenuItem {
 }
 
 const MORE_MENU_ITEMS: MenuItem[] = [
-  {
-    title: "Apply Leave",
-    subtitle: "Submit absence & leave applications",
-    icon: "calendar",
-    color: "#059669",
-    bgColor: "#ecfdf5",
-    route: "/apply-leave",
-  },
+  // {
+  //   title: "Apply Leave",
+  //   subtitle: "Submit absence & leave applications",
+  //   icon: "calendar",
+  //   color: "#059669",
+  //   bgColor: "#ecfdf5",
+  //   route: "/apply-leave",
+  // },
   {
     title: "Invoices",
     subtitle: "Payment history & receipts",

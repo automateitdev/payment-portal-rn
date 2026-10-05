@@ -206,7 +206,7 @@ const AppLayout = () => {
           {/* Drawer overlay */}
           {sidebarOpen && (
             <View className="absolute inset-0 flex-row z-50">
-              <View className="w-64 h-full shadow-2xl">
+              <View className="w-72 h-full shadow-2xl">
                 <Sidebar onNavigate={() => setSidebarOpen(false)} />
               </View>
               <Pressable

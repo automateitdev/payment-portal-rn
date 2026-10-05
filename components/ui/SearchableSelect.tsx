@@ -1,5 +1,7 @@
 import GradientFill from "@/components/ui/GradientFill";
+import { useDebounce } from "@/hooks/useDebounce";
 import { colors } from "@/theme/colors";
+import { normalizeForSearch } from "@/utils/searchNormalize";
 import { Ionicons } from "@expo/vector-icons";
 import React, {
   useCallback,
@@ -23,8 +25,6 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { useDebounce } from "@/hooks/useDebounce";
-import { normalizeForSearch } from "@/utils/searchNormalize";
 import FormField from "./FormField";
 
 /* -------------------------------- TYPES -------------------------------- */

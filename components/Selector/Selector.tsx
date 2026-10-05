@@ -28,6 +28,7 @@ type Props = {
   className?: string;
   onChange?: (value: OptionValue) => void;
   value?: OptionValue | null;
+  icon?: React.ReactNode;
 };
 
 export const CustomSelect = ({
@@ -40,6 +41,7 @@ export const CustomSelect = ({
   className = "",
   value,
   onChange,
+  icon,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -59,7 +61,7 @@ export const CustomSelect = ({
     } else {
       triggerRef.current?.measureInWindow((x, y, width, height) => {
         setMenuPosition({
-          top: y + height + 5,
+          top: y + height + 6,
           left: x,
           width: width,
         });
@@ -74,63 +76,61 @@ export const CustomSelect = ({
   };
 
   return (
-    <View className={`mb-4 ${className}`}>
+    <View className={`w-full ${className}`}>
       {label ? (
-        <Text className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+        <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {label}
         </Text>
       ) : null}
 
       <TouchableOpacity
         ref={triggerRef}
-        activeOpacity={0.85}
+        activeOpacity={0.8}
         disabled={disabled}
         onPress={handleToggle}
-        className={`min-h-[56px] rounded-2xl border px-4 py-3 flex-row items-center justify-between ${
+        className={`h-[52px] rounded-2xl border px-3.5 flex-row items-center justify-between transition-all ${
           disabled
-            ? "border-slate-200 bg-slate-100 dark:bg-slate-900 dark:border-slate-800"
+            ? "border-gray-200 bg-gray-50 dark:bg-gray-900/40 dark:border-gray-800 opacity-60"
             : isOpen
-              ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-500/10"
+              ? "border-emerald-500 bg-white dark:bg-[#111C35] ring-2 ring-emerald-500/20"
               : error
-                ? "border-rose-300 bg-rose-50/60 dark:bg-rose-500/10"
-                : "border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800"
+                ? "border-rose-400 bg-rose-50/30 dark:bg-rose-950/20"
+                : "border-gray-200/90 bg-gray-50/70 hover:bg-white hover:border-gray-300 dark:bg-[#0B1120]/60 dark:border-gray-800 dark:hover:border-gray-700"
         }`}
       >
-        <View className="flex-1 pr-3">
+        <View className="flex-row items-center flex-1 pr-2 min-w-0">
+          {icon ? <View className="mr-2.5 items-center justify-center">{icon}</View> : null}
           <Text
             numberOfLines={1}
-            className={`text-[15px] ${
-              selectedOption 
-                ? "font-semibold text-slate-900 dark:text-slate-100" 
-                : "text-slate-400 dark:text-slate-500"
+            className={`text-sm ${
+              selectedOption
+                ? "font-bold text-gray-950 dark:text-white"
+                : "font-medium text-gray-400 dark:text-gray-500"
             }`}
           >
             {selectedOption?.label || placeholder}
           </Text>
-          {selectedOption ? (
-            <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Tap to change selection
-            </Text>
-          ) : null}
         </View>
 
         <View
-          className={`h-9 w-9 rounded-xl items-center justify-center ${
-            disabled ? "bg-slate-200 dark:bg-slate-800" : "bg-slate-100 dark:bg-slate-800"
+          className={`h-7 w-7 rounded-lg items-center justify-center ${
+            isOpen
+              ? "bg-emerald-100 dark:bg-emerald-950"
+              : "bg-gray-200/60 dark:bg-gray-800/80"
           }`}
         >
           <Ionicons
             name={isOpen ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={disabled ? (isDark ? "#475569" : "#94a3b8") : (isDark ? "#94a3b8" : "#475569")}
+            size={15}
+            color={isOpen ? "#059669" : (isDark ? "#9CA3AF" : "#6B7280")}
           />
         </View>
       </TouchableOpacity>
 
       {error ? (
-        <Text className="mt-2 text-xs text-rose-500">{error}</Text>
+        <Text className="mt-1.5 text-xs text-rose-500 font-medium">{error}</Text>
       ) : helperText ? (
-        <Text className="mt-2 text-xs text-slate-500 dark:text-slate-400">{helperText}</Text>
+        <Text className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{helperText}</Text>
       ) : null}
 
       <Modal
@@ -140,7 +140,7 @@ export const CustomSelect = ({
         onRequestClose={() => setIsOpen(false)}
       >
         <Pressable
-          className="flex-1 bg-transparent"
+          style={{ flex: 1, backgroundColor: "transparent" }}
           onPress={() => setIsOpen(false)}
         >
           <View
@@ -148,18 +148,15 @@ export const CustomSelect = ({
               position: "absolute",
               top: menuPosition.top,
               left: menuPosition.left,
-              width: menuPosition.width,
-              maxHeight: 300,
-              backgroundColor: isDark ? "#1e293b" : "white",
-              borderRadius: 20,
+              width: Math.max(menuPosition.width, 220),
+              maxHeight: 280,
+              backgroundColor: isDark ? "#111C35" : "#FFFFFF",
+              borderRadius: 18,
               borderWidth: 1,
-              borderColor: isDark ? "#334155" : "#f1f5f9",
-              padding: 8,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: isDark ? 0.3 : 0.12,
-              shadowRadius: 24,
-              elevation: 12,
+              borderColor: isDark ? "#1E293B" : "#E2E8F0",
+              padding: 6,
+             
+              elevation: 16,
               zIndex: 1000,
             }}
           >
@@ -168,46 +165,37 @@ export const CustomSelect = ({
               bounces={true}
               className="w-full"
             >
-              {options.map((item, index) => {
+              {options.map((item) => {
                 const isSelected = item.value === selectedValue;
 
                 return (
                   <TouchableOpacity
                     key={String(item.value)}
-                    activeOpacity={0.6}
+                    activeOpacity={0.7}
                     onPress={() => handleSelect(item.value)}
-                    className={`px-4 py-4 flex-row items-center justify-between rounded-2xl mb-1 ${
+                    className={`px-3.5 py-3 flex-row items-center justify-between rounded-xl mb-1 ${
                       isSelected
-                        ? (isDark ? "bg-emerald-500/20" : "bg-emerald-50/80")
-                        : "bg-transparent"
+                        ? (isDark ? "bg-emerald-950/60 border border-emerald-500/30" : "bg-emerald-50 border border-emerald-200")
+                        : (isDark ? "hover:bg-gray-800/50" : "hover:bg-gray-50")
                     }`}
                   >
-                    <View className="flex-1">
-                      <Text
-                        numberOfLines={1}
-                        className={`text-[15px] ${
-                          isSelected
-                            ? "font-bold text-emerald-700 dark:text-emerald-400"
-                            : "font-medium text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        {item.label}
-                      </Text>
-                      {isSelected && (
-                        <Text className={`text-[10px] mt-0.5 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>
-                          Currently Selected
-                        </Text>
-                      )}
-                    </View>
-                    
+                    <Text
+                      numberOfLines={1}
+                      className={`text-sm flex-1 mr-2 ${
+                        isSelected
+                          ? "font-bold text-emerald-700 dark:text-emerald-400"
+                          : "font-medium text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {item.label}
+                    </Text>
+
                     {isSelected && (
-                      <View className="h-6 w-6 rounded-full bg-emerald-500 items-center justify-center">
-                        <Ionicons
-                          name="checkmark"
-                          size={14}
-                          color="white"
-                        />
-                      </View>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color="#059669"
+                      />
                     )}
                   </TouchableOpacity>
                 );
