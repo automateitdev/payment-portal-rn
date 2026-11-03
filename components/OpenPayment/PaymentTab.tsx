@@ -9,13 +9,14 @@ import { usePaymentGateway } from "@/utils/payment/usePaymentGateway";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import { Control, Controller, RegisterOptions, useForm } from "react-hook-form";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { showMessage } from "../shared/CustomToast/message";
 import { normalizeApiError } from "../utils/errorNormalizer";
 import { SearchableSelect } from "../ui/SearchableSelect";
 import ReusableModal from "../Modal/ReusableModal";
 import ReusableInput from "../shared/ReusableInput";
 import ReusableButton from "../shared/Button/ReusableButton";
+import { CONTROL_HEIGHT, FormField } from "../ui/FormField";
 
 /* ----------------------------- Controlled input ----------------------------- */
 type ControlledInputProps = {
@@ -115,6 +116,37 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
     setSelectedGateway(gateways.length === 1 ? gateways[0].type : null);
   }, [gateways]);
 
+  // Once both Academic Year and Fee Head are chosen, load the setup right away
+  // with student_id "null" (open ANY_ID setups work without a student). The
+  // user can still press Search with a real Student ID to load that student.
+  useEffect(() => {
+    if (!instituteId || !academic_year || !fee_head) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await triggerSetup({
+          instituteId,
+          academic_year,
+          fee_head,
+          student_id: "null",
+        }).unwrap();
+        if (cancelled) return;
+        const data = res?.payload?.data;
+        setSetup(data?.setup || null);
+        setGateways(data?.gateways || []);
+        setStudentLocked(false);
+        setValue("amount", "");
+      } catch {
+        if (cancelled) return;
+        setSetup(null);
+        setGateways([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [instituteId, academic_year, fee_head]);
+
   /* ------------------------------ data fetching ----------------------------- */
   const { data: infoRes } = useGetOpenPaymentInfoQuery(
     { instituteId },
@@ -173,6 +205,42 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
     useMakeOpenPaymentMutation();
 
   /* -------------------------------- handlers -------------------------------- */
+  const openInstruction = () => {
+    const url = setup?.instruction_url;
+    if (url) Linking.openURL(url).catch(() => {});
+  };
+
+  const { width: screenWidth } = useWindowDimensions();
+  const isWide = screenWidth >= 640;
+  // Only the mid-width range has room for the notice beside Fee Head; on
+  // mobile and large (sidebar) layouts it drops below the row.
+  const inline = screenWidth >= 640 && screenWidth < 1024;
+  const hasNotice = !!setup?.instruction_url;
+  const NOTICE_TEXT = "Read the notice carefully for further payment";
+  const noticeStyle = { color: "#ef4444", fontSize: 12, flex: 1 } as const;
+  const notice = (
+    <View
+      className="flex-row items-center gap-2"
+      style={{ height: CONTROL_HEIGHT }}
+    >
+      <Pressable
+        onPress={openInstruction}
+        accessibilityLabel="View payment instruction"
+        style={{
+          width: CONTROL_HEIGHT,
+          height: CONTROL_HEIGHT,
+          borderRadius: 8,
+          backgroundColor: "#0b7bc1",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Ionicons name="eye-outline" size={20} color="#ffffff" />
+      </Pressable>
+      <Text style={noticeStyle}>{NOTICE_TEXT}</Text>
+    </View>
+  );
+
   const handleSearch = async () => {
     if (!academic_year || !fee_head || !student_id) {
       showMessage(
@@ -246,10 +314,19 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
         );
         return;
       }
+      if (!values.student_id) {
+        showMessage("warning", "Attention", "Please enter Student ID.");
+        return;
+      }
       const amountObj = feeAmounts.find(
         (a: any) => String(a.id) === values.amount,
       );
-      const numericAmount = amountObj ? Number(amountObj.amount) : 0;
+      const numericAmount =
+        feeAmounts.length === 0
+          ? Number(values.amount)
+          : amountObj
+            ? Number(amountObj.amount)
+            : 0;
       if (!values.amount || !numericAmount) {
         showMessage(
           "warning",
@@ -374,27 +451,38 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
             }}
           />
         </View>
-        <View className="w-full sm:flex-1">
-          <SearchableSelect
-            name="fee_head"
-            control={control}
-            label="Fee Head *"
-            options={feeHeadOptions}
-            placeholder={
-              !academic_year
-                ? "Select Academic Year first"
-                : feeHeadsLoading
-                  ? "Loading fee heads..."
-                  : "Select Fee Head"
-            }
-            disabled={!academic_year || feeHeadsLoading}
-            onValueChange={() => {
-              setSetup(null);
-              setGateways([]);
-            }}
-          />
+        <View
+          className="w-full flex-row flex-wrap items-start gap-2"
+          style={isWide ? { flex: hasNotice && inline ? 2.2 : 1, flexWrap: "nowrap" } : undefined}
+        >
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <SearchableSelect
+              name="fee_head"
+              control={control}
+              label="Fee Head *"
+              options={feeHeadOptions}
+              placeholder={
+                !academic_year
+                  ? "Select Academic Year first"
+                  : feeHeadsLoading
+                    ? "Loading fee heads..."
+                    : "Select Fee Head"
+              }
+              disabled={!academic_year || feeHeadsLoading}
+              onValueChange={() => {
+                setSetup(null);
+                setGateways([]);
+              }}
+            />
+          </View>
+          {hasNotice && inline ? (
+            <FormField reserveLabelSpace noGutter style={{ flex: 1.1 }}>
+              {notice}
+            </FormField>
+          ) : null}
         </View>
       </FieldRow>
+      {hasNotice && !inline ? <View className="mb-4 -mt-1">{notice}</View> : null}
 
       {/* Student ID + Search */}
       <View className="flex-col sm:flex-row sm:items-end lg:flex-col lg:items-stretch gap-4 mb-4">
@@ -530,31 +618,83 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
 
           {/* Fee table */}
           <View className="mt-2 border border-gray-200 rounded-xl overflow-hidden">
-            <View className="flex-row bg-gray-50 border-b border-gray-200">
-              <Text className="flex-1 px-4 py-3 text-[13px] font-bold text-gray-700">
-                Fee Head
-              </Text>
-              <Text className="flex-1 px-4 py-3 text-[13px] font-bold text-gray-700">
-                Amount
-              </Text>
-            </View>
-            <View className="flex-row items-center px-4 py-3">
-              <Text className="flex-1 text-sm text-gray-700">
-                {fee_head || "—"}
-              </Text>
-              <View className="flex-1">
-                <SearchableSelect
-                  name="amount"
-                  control={control}
-                  options={amountOptions}
-                  placeholder={
-                    setup ? "Select Amount" : "Search a student first"
-                  }
-                  disabled={!setup || amountOptions.length === 0}
-                  containerClassName="mb-0"
-                />
-              </View>
-            </View>
+            {isWide ? (
+              <>
+                {/* Wide: two-column table */}
+                <View className="flex-row bg-gray-50 border-b border-gray-200">
+                  <Text className="flex-1 px-4 py-3 text-[13px] font-bold text-gray-700">
+                    Fee Head
+                  </Text>
+                  <Text className="flex-1 px-4 py-3 text-[13px] font-bold text-gray-700">
+                    Amount
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <View className="flex-1 px-4 py-3">
+                    <Text className="text-sm text-gray-700">{fee_head || "—"}</Text>
+                    {setup?.note ? (
+                      <Text className="text-[11px] text-amber-600 italic mt-0.5">
+                        {setup.note}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View className="flex-1 px-3 py-2">
+                    {feeAmounts.length === 0 ? (
+                      <ControlledInput
+                        control={control}
+                        name="amount"
+                        inputType="number"
+                        placeholder="Enter amount"
+                      />
+                    ) : (
+                      <SearchableSelect
+                        name="amount"
+                        control={control}
+                        options={amountOptions}
+                        placeholder="Select Amount"
+                        containerClassName="mb-0"
+                      />
+                    )}
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Mobile: stacked rows */}
+                <View className="px-4 py-3 border-b border-gray-200">
+                  <Text className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Fee Head
+                  </Text>
+                  <Text className="text-sm text-gray-700">{fee_head || "—"}</Text>
+                  {setup?.note ? (
+                    <Text className="text-[11px] text-amber-600 italic mt-0.5">
+                      {setup.note}
+                    </Text>
+                  ) : null}
+                </View>
+                <View className="px-4 py-3">
+                  <Text className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-2">
+                    Amount
+                  </Text>
+                  {feeAmounts.length === 0 ? (
+                    <ControlledInput
+                      control={control}
+                      name="amount"
+                      inputType="number"
+                      placeholder="Enter amount"
+                    />
+                  ) : (
+                    <SearchableSelect
+                      name="amount"
+                      control={control}
+                      options={amountOptions}
+                      placeholder="Select Amount"
+                      containerClassName="mb-0"
+                    />
+                  )}
+                </View>
+              </>
+            )}
           </View>
 
           {/* Info banner */}
@@ -647,25 +787,22 @@ const PaymentTab = ({ instituteId }: { instituteId: string }) => {
                       <Pressable
                         key={gw.type}
                         onPress={() => setSelectedGateway(gw.type)}
-                        className={`flex-row items-center border rounded-xl px-4 py-3 ${
-                          active
+                        className={`flex-row items-center border rounded-xl px-4 py-3 ${active
                             ? "border-lime-500 bg-lime-50"
                             : "border-gray-200 bg-white"
-                        }`}
+                          }`}
                       >
                         <View
-                          className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-3 ${
-                            active ? "border-lime-600" : "border-gray-300"
-                          }`}
+                          className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-3 ${active ? "border-lime-600" : "border-gray-300"
+                            }`}
                         >
                           {active && (
                             <View className="w-2.5 h-2.5 rounded-full bg-lime-600" />
                           )}
                         </View>
                         <Text
-                          className={`font-medium ${
-                            active ? "text-lime-700" : "text-gray-600"
-                          }`}
+                          className={`font-medium ${active ? "text-lime-700" : "text-gray-600"
+                            }`}
                         >
                           {gw.name}
                         </Text>

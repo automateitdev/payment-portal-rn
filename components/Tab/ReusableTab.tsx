@@ -1,15 +1,21 @@
-import React, { useRef } from "react";
+
+import { colors } from "@/theme/colors";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   TextStyle,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+import { ChevronLeftIcon, ChevronRightIcon } from "../ui/AppIcons";
 
-export type TabVariant = "pills" | "underline" | "segmented" | "boxed";
+export type TabVariant =
+  "pills" | "underline" | "segmented" | "boxed" | "switch" | "pill-switch";
 export type TabSize = "xs" | "sm" | "md" | "lg";
 export type TabAlign = "start" | "center" | "end" | "stretch";
 
@@ -130,6 +136,7 @@ interface TabButtonProps {
   textStyle?: TextStyle;
   badgeClassName?: string;
   badgeSizeClass: string;
+  activeColor?: string;
   onPress: () => void;
 }
 
@@ -144,6 +151,7 @@ const TabButton: React.FC<TabButtonProps> = ({
   textStyle,
   badgeClassName,
   badgeSizeClass,
+  activeColor,
   onPress,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -181,7 +189,18 @@ const TabButton: React.FC<TabButtonProps> = ({
           item.customLabel
         ) : (
           <>
-            {item.icon && <View>{item.icon}</View>}
+            {item.icon && (
+              <View>
+                {React.isValidElement(item.icon)
+                  ? React.cloneElement(item.icon as React.ReactElement<any>, {
+                    color:
+                      (item.icon as any).props?.color ||
+                      (isActive ? activeColor : "#64748b"),
+                    size: (item.icon as any).props?.size || 15,
+                  })
+                  : item.icon}
+              </View>
+            )}
             <Text
               className={textClassName}
               style={[activeInlineTextColor, textStyle]}
@@ -191,14 +210,12 @@ const TabButton: React.FC<TabButtonProps> = ({
             </Text>
             {item.badge !== undefined && item.badge !== null && (
               <View
-                className={`rounded-full ${badgeSizeClass} ${
-                  isActive ? "bg-white/25" : "bg-slate-200"
-                } ${badgeClassName ?? ""}`}
+                className={`rounded-full ${badgeSizeClass} ${isActive ? "bg-white/25" : "bg-slate-200"
+                  } ${badgeClassName ?? ""}`}
               >
                 <Text
-                  className={`font-bold ${
-                    isActive ? "text-white" : "text-slate-600"
-                  }`}
+                  className={`font-bold ${isActive ? "text-white" : "text-slate-600"
+                    }`}
                 >
                   {item.badge}
                 </Text>
@@ -220,7 +237,7 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
   align = "start",
   scrollable = true,
   renderContent = false,
-  activeColor = "#345DFF",
+  activeColor = colors.primary.DEFAULT,
   containerClassName,
   className,
   tabClassName,
@@ -234,6 +251,124 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
   textStyle,
 }) => {
   const sz = sizeStyles[size];
+
+  /* ---------- overflow scrolling: arrows + drag ---------- */
+  const scrollRef = useRef<ScrollView>(null);
+  const [viewW, setViewW] = useState(0);
+  const [contentW, setContentW] = useState(0);
+  const [offsetX, setOffsetX] = useState(0);
+  const offsetRef = useRef(0);
+
+  const overflowing = scrollable && contentW > viewW + 1 && viewW > 0;
+  const canLeft = offsetX > 1;
+  const canRight = offsetX + viewW < contentW - 1;
+
+  const scrollByAmount = useCallback(
+    (dir: 1 | -1) => {
+      const step = Math.max(120, viewW * 0.6);
+      const max = Math.max(0, contentW - viewW);
+      const next = Math.min(max, Math.max(0, offsetRef.current + dir * step));
+      scrollRef.current?.scrollTo({ x: next, animated: true });
+    },
+    [viewW, contentW],
+  );
+
+  // Web: grab the tab strip with the mouse and drag it sideways. Touch devices
+  // already pan natively, so this only runs for mouse input.
+  useEffect(() => {
+    if (Platform.OS !== "web" || !scrollable) return;
+    const node: HTMLElement | null =
+      (scrollRef.current as any)?.getScrollableNode?.() ?? null;
+    if (!node) return;
+
+    let down = false;
+    let moved = false;
+    let startX = 0;
+    let startLeft = 0;
+
+    const onDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      down = true;
+      moved = false;
+      startX = e.clientX;
+      startLeft = node.scrollLeft;
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) {
+        moved = true;
+        node.style.cursor = "grabbing";
+      }
+      if (moved) node.scrollLeft = startLeft - dx;
+    };
+    const onUp = () => {
+      if (!down) return;
+      down = false;
+      node.style.cursor = "";
+    };
+    // A drag must not end up selecting a tab.
+    const onClickCapture = (e: MouseEvent) => {
+      if (moved) {
+        e.stopPropagation();
+        e.preventDefault();
+        moved = false;
+      }
+    };
+
+    node.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    node.addEventListener("click", onClickCapture, true);
+    return () => {
+      node.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      node.removeEventListener("click", onClickCapture, true);
+    };
+  }, [scrollable]);
+
+  // Keep the active tab in view when it changes (e.g. picked via an arrow key
+  // or restored state) — scroll so it is roughly centred.
+  const tabLayouts = useRef<Record<string, { x: number; w: number }>>({});
+  useEffect(() => {
+    const l = tabLayouts.current[activeKey];
+    if (!l || !overflowing) return;
+    const target = l.x - (viewW - l.w) / 2;
+    const max = Math.max(0, contentW - viewW);
+    scrollRef.current?.scrollTo({
+      x: Math.min(max, Math.max(0, target)),
+      animated: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, overflowing]);
+
+  const arrowButton = (dir: 1 | -1, enabled: boolean) => (
+    <TouchableOpacity
+      onPress={() => scrollByAmount(dir)}
+      disabled={!enabled}
+      activeOpacity={0.7}
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        alignSelf: "center",
+        backgroundColor: enabled ? colors.primary[50] : "transparent",
+        borderWidth: 1,
+        // borderColor: enabled ? colors.surface.border : "transparent",
+        opacity: enabled ? 1 : 0.35,
+        marginHorizontal: 4,
+      }}
+    >
+      {dir === -1 ? (
+        <ChevronLeftIcon size={16} color={colors.primary[700]} />
+      ) : (
+        <ChevronRightIcon size={16} color={colors.primary[700]} />
+      )}
+    </TouchableOpacity>
+  );
 
   /* ---------- per-variant styles ---------- */
   const buildTabStyles = (item: TabItem, isActive: boolean) => {
@@ -265,9 +400,8 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
         break;
       }
       case "underline": {
-        wrapper += ` rounded-none border-b-2 ${
-          isActive ? "" : "border-transparent"
-        }`;
+        wrapper += ` rounded-none border-b-2 ${isActive ? "" : "border-transparent"
+          }`;
         if (isActive) {
           extraTabStyle = { borderBottomColor: activeColor };
           textCls += "";
@@ -293,6 +427,24 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
         }
         break;
       }
+      case "switch":
+      case "pill-switch": {
+        wrapper += ` rounded-lg ${isActive ? "bg-white" : "bg-transparent"}`;
+        if (isActive) {
+          extraTabStyle = {
+            backgroundColor: "#fff",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 4,
+            elevation: 2,
+          };
+          textCls += " font-bold";
+        } else {
+          textCls += " text-slate-500 font-medium";
+        }
+        break;
+      }
       case "boxed": {
         wrapper += ` rounded-lg border ${isActive ? "border-transparent" : "border-surface-border bg-surface-card"}`;
         if (isActive) {
@@ -315,12 +467,10 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
     if (isDisabled) wrapper += " opacity-40";
 
     return {
-      wrapper: `${wrapper} ${tabClassName ?? ""} ${
-        isActive ? (activeTabClassName ?? "") : ""
-      }`,
-      text: `${textCls} ${textClassName ?? ""} ${
-        isActive ? (activeTextClassName ?? "") : ""
-      }`,
+      wrapper: `${wrapper} ${tabClassName ?? ""} ${isActive ? (activeTabClassName ?? "") : ""
+        }`,
+      text: `${textCls} ${textClassName ?? ""} ${isActive ? (activeTextClassName ?? "") : ""
+        }`,
       extraStyle: extraTabStyle,
     };
   };
@@ -334,6 +484,9 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
         return "border-b border-surface-border";
       case "segmented":
         return "rounded-lg bg-surface-50 p-1";
+      case "switch":
+      case "pill-switch":
+        return "rounded-xl bg-slate-100 p-1";
       case "boxed":
         return "";
       default:
@@ -350,27 +503,40 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
     const isActive = item.key === activeKey;
     const styles = buildTabStyles(item, isActive);
 
-    // Active text color for underline/segmented (uses activeColor inline)
+    // Active text color for underline/segmented/switch (uses activeColor inline)
     const activeInlineTextColor =
-      (variant === "underline" || variant === "segmented") && isActive
-        ? { color: activeColor }
+      variant === "underline" ||
+        variant === "segmented" ||
+        variant === "switch" ||
+        variant === "pill-switch"
+        ? { color: isActive ? activeColor : "#64748b" }
         : undefined;
 
     return (
-      <TabButton
+      <View
         key={item.key}
-        item={item}
-        isActive={isActive}
-        wrapperClassName={styles.wrapper}
-        textClassName={styles.text}
-        extraStyle={styles.extraStyle}
-        activeInlineTextColor={activeInlineTextColor}
-        tabStyle={tabStyle}
-        textStyle={textStyle}
-        badgeClassName={badgeClassName}
-        badgeSizeClass={sz.badge}
-        onPress={() => !item.disabled && onChange(item.key)}
-      />
+        onLayout={(e) => {
+          tabLayouts.current[item.key] = {
+            x: e.nativeEvent.layout.x,
+            w: e.nativeEvent.layout.width,
+          };
+        }}
+      >
+        <TabButton
+          item={item}
+          isActive={isActive}
+          wrapperClassName={styles.wrapper}
+          textClassName={styles.text}
+          extraStyle={styles.extraStyle}
+          activeInlineTextColor={activeInlineTextColor}
+          tabStyle={tabStyle}
+          textStyle={textStyle}
+          badgeClassName={badgeClassName}
+          badgeSizeClass={sz.badge}
+          activeColor={activeColor}
+          onPress={() => !item.disabled && onChange(item.key)}
+        />
+      </View>
     );
   };
 
@@ -391,15 +557,28 @@ const ReusableTab: React.FC<ReusableTabProps> = ({
     <View>
       <View className={`${containerVariantClass} ${containerClassName ?? ""}`}>
         {scrollable ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={
-              align === "stretch" ? { flexGrow: 1 } : undefined
-            }
-          >
-            {listInner}
-          </ScrollView>
+          <View style={{ flexDirection: "row", alignItems: "stretch" }}>
+            {overflowing && arrowButton(-1, canLeft)}
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              style={{ flex: 1 }}
+              onLayout={(e) => setViewW(e.nativeEvent.layout.width)}
+              onContentSizeChange={(w) => setContentW(w)}
+              onScroll={(e) => {
+                offsetRef.current = e.nativeEvent.contentOffset.x;
+                setOffsetX(e.nativeEvent.contentOffset.x);
+              }}
+              contentContainerStyle={
+                align === "stretch" ? { flexGrow: 1 } : undefined
+              }
+            >
+              {listInner}
+            </ScrollView>
+            {overflowing && arrowButton(1, canRight)}
+          </View>
         ) : (
           listInner
         )}

@@ -5,14 +5,13 @@ import React from "react";
 import {
   Modal,
   ModalProps,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
-import ReusableButton, {
-  ReusableButtonProps,
-} from "../shared/Button/ReusableButton";
+import ReusableButton, { ReusableButtonProps } from "../shared/Button/ReusableButton";
 
 export type ModalSize = "xs" | "sm" | "md" | "lg" | "xl" | "full" | "auto";
 
@@ -136,6 +135,23 @@ const ReusableModal: React.FC<ReusableModalProps> = ({
   const finalWidth = width !== undefined ? width : sizeStyles.width;
   const finalMaxWidth = maxWidth !== undefined ? maxWidth : sizeStyles.maxWidth;
 
+  const normalizedHeight =
+    Platform.OS === "web" && typeof height === "string" && height.endsWith("%")
+      ? `${parseFloat(height)}vh`
+      : height;
+
+  const normalizedMaxHeight =
+    Platform.OS === "web" && typeof maxHeight === "string" && maxHeight.endsWith("%")
+      ? `${parseFloat(maxHeight)}vh`
+      : maxHeight;
+
+  const isFlexBody =
+    normalizedHeight !== undefined ||
+    normalizedMaxHeight !== undefined ||
+    bodyClassName?.includes("flex-1");
+
+  const bodyStyle = isFlexBody ? { flex: 1, minHeight: 0 } : undefined;
+
   const hasHeader =
     !hideHeader && (title || subtitle || headerSlot || showCloseIcon !== false);
   const hasQuickButtons = Boolean(confirmButton || cancelButton);
@@ -157,6 +173,7 @@ const ReusableModal: React.FC<ReusableModalProps> = ({
     >
       <View
         className={`flex-1 items-center justify-center p-4 ${backdropClassName ?? "bg-black/50"} ${containerClassName ?? ""}`}
+        style={Platform.OS === "web" ? ({ width: "100vw", height: "100vh" } as any) : undefined}
       >
         {/* Backdrop press layer (absolute, behind card) */}
         <Pressable onPress={handleBackdropPress} className="absolute inset-0" />
@@ -167,8 +184,8 @@ const ReusableModal: React.FC<ReusableModalProps> = ({
           style={{
             width: finalWidth as any,
             maxWidth: finalMaxWidth as any,
-            ...(height !== undefined ? { height: height as any } : {}),
-            ...(maxHeight !== undefined ? { maxHeight: maxHeight as any } : {}),
+            ...(normalizedHeight !== undefined ? { height: normalizedHeight as any } : {}),
+            ...(normalizedMaxHeight !== undefined ? { maxHeight: normalizedMaxHeight as any } : {}),
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.18,
@@ -223,12 +240,14 @@ const ReusableModal: React.FC<ReusableModalProps> = ({
           {scrollable ? (
             <ScrollView
               className={`px-5 py-4 ${bodyClassName ?? ""}`}
+              style={bodyStyle}
+              contentContainerStyle={{ flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
             >
               {children}
             </ScrollView>
           ) : (
-            <View className={`px-5 py-4 ${bodyClassName ?? ""}`}>
+            <View className={`px-5 py-4 ${bodyClassName ?? ""}`} style={bodyStyle}>
               {children}
             </View>
           )}
